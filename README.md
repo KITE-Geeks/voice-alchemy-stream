@@ -5,7 +5,7 @@ Meant for sharing access without compromising your account.
 
 ## Currently functional:
 
-Text-to-Speech
+Text-to-Speech, 
 Speech-to-Speech
 
 ## What technologies are used for this project?
