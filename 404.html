@@ -1,3 +1,4 @@
 <script>
-  location.replace('/voice-alchemy-stream/' + location.search + location.hash);
+  var path = location.pathname.replace('/voice-alchemy-stream', '');
+  location.replace('/voice-alchemy-stream/' + path + location.search + location.hash);
 </script> 
