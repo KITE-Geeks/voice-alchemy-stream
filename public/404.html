@@ -1,0 +1,10 @@
+<script>
+  var base = '/voice-alchemy-stream';
+  var path = location.pathname.replace(base, '');
+  if (path === '/404.html' || path === '404.html') {
+    location.replace(base + '/');
+  } else if (location.pathname !== base + '/' && location.pathname !== base) {
+    if (path.startsWith('/')) path = path.slice(1);
+    location.replace(base + (path ? '/' + path : '') + location.search + location.hash);
+  }
+</script> 
