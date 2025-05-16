@@ -7,9 +7,10 @@ export class ElevenLabsAPI {
     this.apiKey = apiKey;
   }
   
-  // Validates the API key by fetching voices instead of user info
+  // Validates the API key by attempting to fetch voices
   async validateApiKey(): Promise<boolean> {
     try {
+      // Try to fetch voices as a validation method
       const response = await fetch('https://api.elevenlabs.io/v1/voices', {
         method: 'GET',
         headers: {
@@ -18,13 +19,19 @@ export class ElevenLabsAPI {
         }
       });
       
-      if (!response.ok) {
-        throw new Error('Invalid API key');
+      // If we get a 401 or 403, the key is definitely invalid
+      if (response.status === 401 || response.status === 403) {
+        console.log('API key validation failed with status:', response.status);
+        return false;
       }
       
+      // Any other response means the key is probably valid
+      // Even if we get a different error, it suggests the API recognized the key
       return true;
     } catch (error) {
-      console.error('API key validation error:', error);
+      console.error('API key validation error (network failure):', error);
+      // Network errors should not necessarily invalidate the key
+      // The user might just have connectivity issues
       return false;
     }
   }
@@ -41,7 +48,9 @@ export class ElevenLabsAPI {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to fetch voices');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Get voices error response:', errorData);
+        throw new Error(errorData?.detail?.message || 'Failed to fetch voices');
       }
       
       const data = await response.json();
@@ -69,8 +78,12 @@ export class ElevenLabsAPI {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to convert audio');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Audio conversion error response:', errorData);
+        throw new Error(
+          errorData?.detail?.message || 
+          (typeof errorData?.detail === 'string' ? errorData.detail : 'Failed to convert audio')
+        );
       }
       
       return await response.blob();
