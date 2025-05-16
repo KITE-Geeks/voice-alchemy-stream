@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { elevenlabsApi, Voice } from '../api/elevenlabs';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,35 +7,51 @@ import { Label } from './ui/label';
 import { toast } from 'sonner';
 import { Card, CardContent } from './ui/card';
 import { Play, Loader2 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { NavTabs } from './NavTabs';
 
 export function SpeechToSpeech() {
-  const [apiKey, setApiKey] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const apiKey = location.state?.apiKey || '';
+
   const [voices, setVoices] = useState<Voice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>('');
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [stability, setStability] = useState(0.5);
   const [similarityBoost, setSimilarityBoost] = useState(0.75);
   const [convertedAudio, setConvertedAudio] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // for voices
+  const [isGenerating, setIsGenerating] = useState(false); // for conversion
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+  const [voicesLoaded, setVoicesLoaded] = useState(false);
 
-  const fetchVoices = useCallback(async () => {
+  // If no API key, redirect to landing page
+  useEffect(() => {
     if (!apiKey) {
-      toast.error('Please enter your ElevenLabs API key');
-      return;
+      toast.error('API key missing. Please start from the landing page.');
+      navigate('/', { replace: true });
     }
+  }, [apiKey, navigate]);
 
-    try {
-      setIsLoading(true);
-      const voices = await elevenlabsApi.getVoices(apiKey);
-      setVoices(voices);
-      toast.success('Voices loaded successfully');
-    } catch (error) {
-      toast.error('Failed to load voices. Please check your API key.');
-    } finally {
-      setIsLoading(false);
+  // Auto-load voices on mount
+  useEffect(() => {
+    if (apiKey && !voicesLoaded) {
+      (async () => {
+        try {
+          setIsLoading(true);
+          const voices = await elevenlabsApi.getVoices(apiKey);
+          setVoices(voices);
+          setVoicesLoaded(true);
+          toast.success('Voices loaded successfully');
+        } catch (error) {
+          toast.error('Failed to load voices.');
+        } finally {
+          setIsLoading(false);
+        }
+      })();
     }
-  }, [apiKey]);
+  }, [apiKey, voicesLoaded]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -51,7 +67,7 @@ export function SpeechToSpeech() {
     }
 
     try {
-      setIsLoading(true);
+      setIsGenerating(true);
       const response = await elevenlabsApi.convertSpeechToSpeech(
         apiKey,
         selectedVoice,
@@ -64,7 +80,7 @@ export function SpeechToSpeech() {
     } catch (error) {
       toast.error('Failed to convert audio');
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -108,125 +124,124 @@ export function SpeechToSpeech() {
     }
   };
 
+  // Filter out voices with 'hidden' in the name
+  const filteredVoices = voices.filter(v => !v.name.toLowerCase().includes('hidden'));
+
   return (
-    <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Speech to Speech Converter</h1>
-      
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="apiKey">ElevenLabs API Key</Label>
-          <Input
-            id="apiKey"
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Enter your API key"
-          />
-          <Button onClick={fetchVoices} disabled={isLoading} className="mt-2">
-            Load Voices
-          </Button>
-        </div>
-
-        <div>
-          <Label htmlFor="voice">Select Voice</Label>
-          <div className="flex flex-col gap-0.5 py-1 max-h-72 overflow-y-auto border rounded-md bg-background">
-            {voices.map((voice) => (
-              <div
-                key={voice.voice_id}
-                className={`w-full px-2 py-0.5 rounded-lg border cursor-pointer transition-colors flex flex-col group ${selectedVoice === voice.voice_id ? 'border-primary bg-muted' : 'border-border bg-background'}`}
-                onClick={() => setSelectedVoice(voice.voice_id)}
-                tabIndex={0}
-                role="button"
-                aria-pressed={selectedVoice === voice.voice_id}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-base truncate max-w-[100px] leading-none">{voice.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      await handlePreviewVoice(voice);
-                    }}
-                    disabled={!!previewingVoice || !voice.preview_url}
-                    className="ml-1"
-                  >
-                    {!voice.preview_url ? (
-                      <span className="text-xs">N/A</span>
-                    ) : previewingVoice === voice.voice_id ? (
-                      <Loader2 className="animate-spin w-4 h-4" />
-                    ) : (
-                      <Play className="w-4 h-4" />
-                    )}
-                  </Button>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+      <Card className="w-full max-w-2xl">
+        <CardContent className="py-8">
+          <NavTabs />
+          <h1 className="text-2xl font-bold mb-6 text-center">Speech to Speech Converter</h1>
+          <div className="space-y-4">
+            {!voicesLoaded || isLoading ? (
+              <div className="text-center text-muted-foreground">Loading voices...</div>
+            ) : (
+              <>
+                <div>
+                  <Label htmlFor="voice">Select Voice</Label>
+                  <div className="flex flex-col gap-0.5 py-1 max-h-72 overflow-y-auto border rounded-md bg-background">
+                    {filteredVoices.map((voice) => (
+                      <div
+                        key={voice.voice_id}
+                        className={`w-full px-2 py-0.5 rounded-lg border cursor-pointer transition-colors flex flex-col group ${selectedVoice === voice.voice_id ? 'border-primary bg-muted' : 'border-border bg-background'}`}
+                        onClick={() => setSelectedVoice(voice.voice_id)}
+                        tabIndex={0}
+                        role="button"
+                        aria-pressed={selectedVoice === voice.voice_id}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-base flex-1 mr-2">{voice.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await handlePreviewVoice(voice);
+                            }}
+                            disabled={!!previewingVoice || !voice.preview_url}
+                            className="ml-1"
+                          >
+                            {!voice.preview_url ? (
+                              <span className="text-xs">N/A</span>
+                            ) : previewingVoice === voice.voice_id ? (
+                              <Loader2 className="animate-spin w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate max-w-full leading-none">{voice.category}</div>
+                        {voice.description && (
+                          <div className="text-xs text-muted-foreground truncate max-w-full leading-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">{voice.description}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground truncate max-w-full leading-none">{voice.category}</div>
-                {voice.description && (
-                  <div className="text-xs text-muted-foreground truncate max-w-full leading-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">{voice.description}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
 
-        <div>
-          <Label htmlFor="audioFile">Upload Audio File</Label>
-          <Input
-            id="audioFile"
-            type="file"
-            accept="audio/*"
-            onChange={handleFileChange}
-          />
-        </div>
+                <div>
+                  <Label htmlFor="audioFile">Upload Audio File</Label>
+                  <Input
+                    id="audioFile"
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleFileChange}
+                  />
+                </div>
 
-        <div>
-          <Label>Stability ({stability})</Label>
-          <Slider
-            value={[stability]}
-            onValueChange={([value]) => setStability(value)}
-            min={0}
-            max={1}
-            step={0.1}
-          />
-        </div>
+                <div>
+                  <Label>Stability ({stability})</Label>
+                  <Slider
+                    value={[stability]}
+                    onValueChange={([value]) => setStability(value)}
+                    min={0}
+                    max={1}
+                    step={0.1}
+                  />
+                </div>
 
-        <div>
-          <Label>Similarity Boost ({similarityBoost})</Label>
-          <Slider
-            value={[similarityBoost]}
-            onValueChange={([value]) => setSimilarityBoost(value)}
-            min={0}
-            max={1}
-            step={0.1}
-          />
-        </div>
+                <div>
+                  <Label>Similarity Boost ({similarityBoost})</Label>
+                  <Slider
+                    value={[similarityBoost]}
+                    onValueChange={([value]) => setSimilarityBoost(value)}
+                    min={0}
+                    max={1}
+                    step={0.1}
+                  />
+                </div>
 
-        <Button
-          onClick={handleConvert}
-          disabled={isLoading || !apiKey || !selectedVoice || !audioFile}
-          className="w-full"
-        >
-          {isLoading ? 'Converting...' : 'Convert'}
-        </Button>
-
-        {convertedAudio && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Converted Audio</h3>
-                <audio
-                  controls
-                  src={`data:audio/mpeg;base64,${convertedAudio}`}
+                <Button
+                  onClick={handleConvert}
+                  disabled={isGenerating || !apiKey || !selectedVoice || !audioFile}
                   className="w-full"
-                />
-                <Button onClick={handleDownload} className="w-full">
-                  Download Converted Audio
+                >
+                  {isGenerating ? 'Converting...' : 'Convert'}
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+
+                {convertedAudio && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Converted Audio</h3>
+                        <audio
+                          controls
+                          src={`data:audio/mpeg;base64,${convertedAudio}`}
+                          className="w-full"
+                        />
+                        <Button onClick={handleDownload} className="w-full">
+                          Download Converted Audio
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 } 

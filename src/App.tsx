@@ -9,6 +9,10 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { Button } from './components/ui/button';
 import { Moon, Sun } from 'lucide-react';
+import TextToSpeech from './pages/text-to-speech';
+import SoundFX from './pages/sound-fx';
+import SpeechToText from './pages/speech-to-text';
+import { SpeechToSpeech as SpeechToSpeechFeature } from './components/SpeechToSpeech';
 
 const queryClient = new QueryClient();
 
@@ -40,6 +44,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/text-to-speech" element={<TextToSpeech />} />
+            <Route path="/speech-to-speech" element={<SpeechToSpeechFeature />} />
+            <Route path="/sound-fx" element={<SoundFX />} />
+            <Route path="/speech-to-text" element={<SpeechToText />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
