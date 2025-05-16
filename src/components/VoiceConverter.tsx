@@ -104,6 +104,9 @@ const VoiceConverter = ({ apiKey }: VoiceConverterProps) => {
     }));
     
     try {
+      // Add debug logging
+      console.log('Converting with voice ID:', state.selectedVoiceId);
+      
       const audioBlob = await api.convertAudio(state.sourceAudio, state.selectedVoiceId);
       const url = URL.createObjectURL(audioBlob);
       

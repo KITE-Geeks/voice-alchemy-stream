@@ -64,6 +64,10 @@ export class ElevenLabsAPI {
   // Converts audio using Voice Conversion API
   async convertAudio(sourceAudioFile: File, targetVoiceId: string): Promise<Blob> {
     try {
+      // Log the parameters for debugging
+      console.log('Converting audio with targetVoiceId:', targetVoiceId);
+      console.log('Audio file type:', sourceAudioFile.type, 'size:', sourceAudioFile.size);
+      
       const formData = new FormData();
       formData.append('audio', sourceAudioFile);
       formData.append('voice_id', targetVoiceId);
@@ -77,6 +81,9 @@ export class ElevenLabsAPI {
         },
         body: formData
       });
+      
+      // Log the response status for debugging
+      console.log('Conversion response status:', response.status);
       
       if (!response.ok) {
         let errorMessage = 'Failed to convert audio';
