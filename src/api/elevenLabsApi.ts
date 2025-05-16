@@ -7,10 +7,10 @@ export class ElevenLabsAPI {
     this.apiKey = apiKey;
   }
   
-  // Validates the API key by fetching user info
+  // Validates the API key by fetching voices instead of user info
   async validateApiKey(): Promise<boolean> {
     try {
-      const response = await fetch('https://api.elevenlabs.io/v1/user', {
+      const response = await fetch('https://api.elevenlabs.io/v1/voices', {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
