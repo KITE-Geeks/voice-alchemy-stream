@@ -69,7 +69,8 @@ export class ElevenLabsAPI {
       formData.append('voice_id', targetVoiceId);
       formData.append('model_id', 'eleven_multilingual_sts_v2');
       
-      const response = await fetch('https://api.elevenlabs.io/v1/speech-to-speech', {
+      // Using the correct endpoint for speech-to-speech conversion
+      const response = await fetch('https://api.elevenlabs.io/v1/speech-to-speech/convert', {
         method: 'POST',
         headers: {
           'xi-api-key': this.apiKey,
@@ -78,12 +79,16 @@ export class ElevenLabsAPI {
       });
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Audio conversion error response:', errorData);
-        throw new Error(
-          errorData?.detail?.message || 
-          (typeof errorData?.detail === 'string' ? errorData.detail : 'Failed to convert audio')
-        );
+        let errorMessage = 'Failed to convert audio';
+        try {
+          const errorData = await response.json();
+          console.error('Audio conversion error response:', errorData);
+          errorMessage = errorData?.detail?.message || 
+                        (typeof errorData?.detail === 'string' ? errorData.detail : errorMessage);
+        } catch (e) {
+          console.error('Could not parse error response:', e);
+        }
+        throw new Error(errorMessage);
       }
       
       return await response.blob();
