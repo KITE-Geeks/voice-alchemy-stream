@@ -1,8 +1,8 @@
 import { ThemeProvider, useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "./components/ui/toaster";
+import { Toaster as Sonner } from "./components/ui/sonner";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
@@ -15,6 +15,9 @@ import SpeechToText from './pages/speech-to-text';
 import { SpeechToSpeech as SpeechToSpeechFeature } from './components/SpeechToSpeech';
 
 const queryClient = new QueryClient();
+
+// Get the base URL from Vite's environment
+const baseUrl = import.meta.env.BASE_URL;
 
 function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
@@ -41,7 +44,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <ThemeToggle />
-        <BrowserRouter>
+        <BrowserRouter basename={baseUrl}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/text-to-speech" element={<TextToSpeech />} />
