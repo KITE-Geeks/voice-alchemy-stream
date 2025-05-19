@@ -14,6 +14,7 @@ This project is built with:
 
 - Lovable AI
 - Cursor AI
+- Perplexity
 - Vite
 - TypeScript
 - React
