@@ -55,7 +55,6 @@ const App = () => (
               <Route path="/speech-to-speech" element={<SpeechToSpeech />} />
               <Route path="/sound-fx" element={<SoundFX />} />
               <Route path="/voice-isolator" element={<VoiceIsolator />} />
-              <Route path="/speech-to-text" element={<VoiceIsolator />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
