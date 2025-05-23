@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { elevenlabsApi } from '@/api/elevenlabsApi.unified';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const features = [
-  { key: 'text-to-speech', label: 'Text to Speech' },
-  { key: 'speech-to-speech', label: 'Speech to Speech' },
-  { key: 'sound-fx', label: 'Sound FX' },
-  { key: 'speech-to-text', label: 'Speech to Text' },
+// Feature keys will be used for navigation and translation lookup
+const featureKeys = [
+  { key: 'text-to-speech', translationKey: 'nav.text_to_speech' },
+  { key: 'speech-to-speech', translationKey: 'nav.speech_to_speech' },
+  { key: 'sound-fx', translationKey: 'nav.sound_fx' },
+  { key: 'voice-isolator', translationKey: 'nav.voice_isolator' },
 ];
 
 export default function Index() {
@@ -20,6 +22,7 @@ export default function Index() {
   const navigate = useNavigate();
   const location = useLocation();
   const passedApiKey = location.state?.apiKey || '';
+  const { t } = useLanguage();
 
   const handleValidate = async () => {
     setLoading(true);
@@ -62,11 +65,11 @@ export default function Index() {
             </>
           ) : (
             <>
-              <div className="mb-4 text-center text-muted-foreground">Select a feature:</div>
+              <div className="mb-4 text-center text-muted-foreground">{t('common.select_feature')}</div>
               <div className="flex flex-col gap-3">
-                {features.map(f => (
+                {featureKeys.map(f => (
                   <Button key={f.key} className="w-full" onClick={() => handleFeatureSelect(f.key)}>
-                    {f.label}
+                    {t(f.translationKey)}
                   </Button>
                 ))}
               </div>

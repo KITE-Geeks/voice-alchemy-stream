@@ -12,6 +12,7 @@ const translations = {
   en: {
     // Common
     'common.loading': 'Loading...',
+    'common.select_feature': 'Select a feature:',
     'common.download': 'Download',
     'common.play': 'Play',
     'common.pause': 'Pause',
@@ -97,6 +98,7 @@ const translations = {
   de: {
     // Common
     'common.loading': 'Wird geladen...',
+    'common.select_feature': 'Wählen Sie eine Funktion:',
     'common.download': 'Herunterladen',
     'common.play': 'Abspielen',
     'common.pause': 'Pause',
