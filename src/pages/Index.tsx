@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { elevenlabsApi } from '../api/elevenlabs';
+import { elevenlabsApi } from '@/api/elevenlabsApi.unified';
 
 const features = [
   { key: 'text-to-speech', label: 'Text to Speech' },

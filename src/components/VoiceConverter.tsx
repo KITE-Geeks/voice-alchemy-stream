@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ElevenLabsAPI } from '@/api/elevenLabsApi';
+import { ElevenLabsAPI } from '@/api/elevenlabsApi.unified';
 import { toast } from '@/components/ui/sonner';
 import { ElevenLabsVoice, ConversionState } from '@/types';
 import { Progress } from '@/components/ui/progress';

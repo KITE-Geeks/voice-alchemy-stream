@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
-import { NavTabs } from '../components/NavTabs';
-import { elevenlabsApi, Voice, calculateTextToSpeechCost } from '../api/elevenlabs';
+import { NavTabs } from '@/components/NavTabs';
+import { elevenlabsApi, calculateTextToSpeechCost } from '@/api/elevenlabsApi.unified';
+import { Voice } from '@/types/voice';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -10,38 +11,48 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Play, Loader2, Download } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // --- Persistence Utilities ---
+import { saveToStorage, loadFromStorage, removeFromStorage } from '@/utils/storage';
+
 const TTS_TEXT_KEY = 'texttospeech_text';
 const TTS_SELECTED_VOICE_KEY = 'texttospeech_selected_voice';
 const TTS_CONVERTED_AUDIO_KEY = 'texttospeech_converted_audio';
 
 function saveTextToStorage(text: string) {
-  localStorage.setItem(TTS_TEXT_KEY, text);
+  saveToStorage(TTS_TEXT_KEY, text);
 }
+
 function loadTextFromStorage(): string {
-  return localStorage.getItem(TTS_TEXT_KEY) || '';
+  return loadFromStorage(TTS_TEXT_KEY, '');
 }
+
 function saveTTSVoiceToStorage(voiceId: string) {
-  localStorage.setItem(TTS_SELECTED_VOICE_KEY, voiceId);
+  saveToStorage(TTS_SELECTED_VOICE_KEY, voiceId);
 }
+
 function loadTTSVoiceFromStorage(): string {
-  return localStorage.getItem(TTS_SELECTED_VOICE_KEY) || '';
+  return loadFromStorage(TTS_SELECTED_VOICE_KEY, '');
 }
+
 function saveTTSAudioToStorage(audio: string | null) {
-  if (audio)
-    localStorage.setItem(TTS_CONVERTED_AUDIO_KEY, audio);
-  else
-    localStorage.removeItem(TTS_CONVERTED_AUDIO_KEY);
+  if (audio) {
+    saveToStorage(TTS_CONVERTED_AUDIO_KEY, audio);
+  } else {
+    removeFromStorage(TTS_CONVERTED_AUDIO_KEY);
+  }
 }
+
 function loadTTSAudioFromStorage(): string | null {
-  return localStorage.getItem(TTS_CONVERTED_AUDIO_KEY) || null;
+  return loadFromStorage(TTS_CONVERTED_AUDIO_KEY, null);
 }
 
 export default function TextToSpeech() {
   const location = useLocation();
   const navigate = useNavigate();
   const apiKey = location.state?.apiKey || '';
+  const { t, language } = useLanguage();
 
   const [voices, setVoices] = useState<Voice[]>([]);
   const [selectedVoice, setSelectedVoiceState] = useState<string>(() => loadTTSVoiceFromStorage());
@@ -119,12 +130,10 @@ export default function TextToSpeech() {
 
     try {
       setIsGenerating(true);
-      const response = await elevenlabsApi.convertTextToSpeech(
+      const response = await elevenlabsApi.textToSpeech(
         apiKey,
-        selectedVoice,
         inputText,
-        stability,
-        similarityBoost
+        selectedVoice
       );
       setGeneratedAudio(response.audio);
       toast.success('Audio generated successfully');
@@ -182,14 +191,14 @@ export default function TextToSpeech() {
       <Card className="w-full max-w-2xl">
         <CardContent className="py-8">
           <NavTabs />
-          <h2 className="text-2xl font-bold mb-4 text-center">Text to Speech</h2>
+          <h2 className="text-2xl font-bold mb-4 text-center">{t('text_to_speech.title')}</h2>
           <div className="space-y-4">
             {!voicesLoaded || isLoading ? (
-              <div className="text-center text-muted-foreground">Loading voices...</div>
+              <div className="text-center text-muted-foreground">{t('common.loading_voices')}</div>
             ) : (
               <>
                 <div>
-                  <Label htmlFor="voice">Select Voice</Label>
+                  <Label htmlFor="voice">{t('common.select_voice')}</Label>
                   <div
                     ref={voiceListRef}
                     className="flex flex-col gap-0.5 py-1 max-h-72 overflow-y-auto border rounded-md bg-background"
@@ -235,22 +244,22 @@ export default function TextToSpeech() {
                 </div>
 
                 <div>
-                  <Label htmlFor="text">Enter Text</Label>
+                  <Label htmlFor="text">{t('text_to_speech.enter_text')}</Label>
                   <Textarea
                     id="text"
-                    placeholder="Type or paste your text here..."
+                    placeholder={t('text_to_speech.text_placeholder')}
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     className="h-32"
                   />
                   <div className="text-sm text-muted-foreground mt-1">
-                    Estimated cost: {estimatedCost} credits
+                    {t('common.estimated_cost')} {estimatedCost} {t('common.credits')}
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <Label>Stability ({stability})</Label>
+                    <Label>{t('text_to_speech.stability')} ({stability})</Label>
                     <Slider
                       value={[stability]}
                       onValueChange={([value]) => setStability(value)}
@@ -260,12 +269,12 @@ export default function TextToSpeech() {
                       className="my-2"
                     />
                     <div className="text-xs text-muted-foreground">
-                      Higher values will make the voice more stable and consistent, but may lose some expressiveness.
+                      {t('text_to_speech.stability_description')}
                     </div>
                   </div>
 
                   <div>
-                    <Label>Similarity Boost ({similarityBoost})</Label>
+                    <Label>{t('text_to_speech.similarity_boost')} ({similarityBoost})</Label>
                     <Slider
                       value={[similarityBoost]}
                       onValueChange={([value]) => setSimilarityBoost(value)}
@@ -275,7 +284,7 @@ export default function TextToSpeech() {
                       className="my-2"
                     />
                     <div className="text-xs text-muted-foreground">
-                      Higher values will make the voice more similar to the original voice, but may reduce quality.
+                      {t('text_to_speech.similarity_description')}
                     </div>
                   </div>
                 </div>
@@ -288,10 +297,10 @@ export default function TextToSpeech() {
                   {isGenerating ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating...
+                      {t('common.generating')}
                     </>
                   ) : (
-                    'Generate Audio'
+                    t('text_to_speech.generate_audio')
                   )}
                 </Button>
 
@@ -299,14 +308,14 @@ export default function TextToSpeech() {
                   <Card>
                     <CardContent className="pt-6">
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Generated Audio</h3>
+                        <h3 className="text-lg font-semibold">{t('common.generated_audio')}</h3>
                         <audio
                           controls
                           src={`data:audio/mpeg;base64,${generatedAudio}`}
                           className="w-full"
                         />
                         <Button onClick={handleDownload} className="w-full">
-                          Download Generated Audio
+                          {t('text_to_speech.download_generated')}
                         </Button>
                       </div>
                     </CardContent>
