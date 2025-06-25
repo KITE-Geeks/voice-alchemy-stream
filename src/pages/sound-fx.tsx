@@ -10,6 +10,8 @@ import { ChevronDown, ChevronUp, Download, Loader2, Pause, Play } from 'lucide-r
 import { elevenlabsApi } from '@/api/elevenlabsApi.unified';
 import { NavTabs } from '@/components/NavTabs';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useGenerationHistory } from '@/contexts/GenerationHistoryContext';
+import { GenerationHistoryPanel } from '@/components/GenerationHistoryPanel';
 
 import { SoundFXSettings, GeneratedSound } from '@/types/soundfx';
 
@@ -48,8 +50,8 @@ export default function SoundFX() {
   const [settings, setSettings] = useState<SoundFXSettings>(() => loadSettingsFromStorage());
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentSounds, setCurrentSounds] = useState<GeneratedSound[]>([]);
-  const [historicalSounds, setHistoricalSounds] = useState<GeneratedSound[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const { addToHistory } = useGenerationHistory();
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   
@@ -154,17 +156,29 @@ export default function SoundFX() {
         throw new Error('Failed to process any sound effect variations');
       }
       
-      // Move any current sounds to history before setting the new current sounds
-      if (currentSounds.length > 0) {
-        setHistoricalSounds(prev => [...currentSounds, ...prev]);
-      }
+      // Current sounds are now managed by the history context
       
       // Set the new sounds as current sounds
       setCurrentSounds(newSounds);
       console.log('Sound effect generated successfully');
 
-      // Auto-play the first generated sound if available
+      // Add to history and auto-play the first generated sound if available
       if (newSounds.length > 0) {
+        // Add to history
+        try {
+          newSounds.forEach(sound => {
+            addToHistory({
+              type: 'sound-fx',
+              input: sound.prompt,
+              audioUrl: `data:audio/mp3;base64,${sound.audio}`,
+              // No voiceName for sound effects
+            });
+          });
+        } catch (error) {
+          console.error('Failed to add to history:', error);
+        }
+
+        // Auto-play the first sound
         try {
           const audio = new Audio(`data:audio/mp3;base64,${newSounds[0].audio}`);
           await audio.play();
@@ -428,68 +442,10 @@ export default function SoundFX() {
               )}
             </div>
 
-            {/* Historical Sounds */}
-            {historicalSounds.length > 0 && (
-              <div className="space-y-4 mt-8">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-semibold">{t('sound_fx.history')}</h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowHistory(!showHistory)}
-                    className="flex items-center gap-1"
-                  >
-                    {showHistory ? t('sound_fx.hide_history') : t('sound_fx.show_history')}
-                    {showHistory ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </Button>
-                </div>
-                
-                {showHistory && (
-                  <div className="grid gap-4">
-                    {historicalSounds.map((sound) => (
-                      <Card key={sound.id} className="overflow-hidden">
-                        <div className="p-4">
-                          <div className="flex justify-between items-center">
-                            <div className="space-y-1">
-                              <p className="text-sm font-medium">{sound.prompt}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(sound.timestamp).toLocaleString()}
-                              </p>
-                            </div>
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handlePlaySound(sound)}
-                                disabled={isGenerating}
-                                className="h-8 w-8"
-                                title={currentlyPlaying === sound.id ? t('common.pause') : t('common.play')}
-                              >
-                                {currentlyPlaying === sound.id ? (
-                                  <Pause className="h-4 w-4" />
-                                ) : (
-                                  <Play className="h-4 w-4" />
-                                )}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handleDownload(sound)}
-                                disabled={isGenerating}
-                                className="h-8 w-8"
-                                title={t('common.download')}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Generation History */}
+            <div className="mt-8">
+              <GenerationHistoryPanel />
+            </div>
           </div>
         </CardContent>
       </Card>

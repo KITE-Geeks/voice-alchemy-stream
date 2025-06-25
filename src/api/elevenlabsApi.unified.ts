@@ -142,7 +142,15 @@ export class ElevenLabsAPI {
       }
       
       const data = await response.json();
-      return data.voices;
+      // Sort voices to put premade voices at the bottom
+      return data.voices.sort((a: Voice, b: Voice) => {
+        // If both are premade or both are not, sort alphabetically by name
+        if ((a.category === 'premade') === (b.category === 'premade')) {
+          return a.name.localeCompare(b.name);
+        }
+        // Put premade voices after custom voices
+        return a.category === 'premade' ? 1 : -1;
+      });
     } catch (error) {
       console.error('Get voices error:', error);
       throw error;

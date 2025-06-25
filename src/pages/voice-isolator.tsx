@@ -10,6 +10,8 @@ import { Upload, AlertCircle, Download, Loader2, Volume2, Trash2, Play } from 'l
 import { elevenlabsApi, calculateVoiceIsolationCost } from '@/api/elevenlabsApi.unified';
 import { NavTabs } from '@/components/NavTabs';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useGenerationHistory } from '@/contexts/GenerationHistoryContext';
+import { GenerationHistoryPanel } from '@/components/GenerationHistoryPanel';
 
 // --- Persistence Utilities ---
 import { saveToStorage, loadFromStorage, saveFileToStorage, loadFileFromStorage } from '@/utils/storage';
@@ -56,6 +58,7 @@ export default function VoiceIsolator() {
   // --- Audio analysis state ---
   const [audioDuration, setAudioDuration] = useState<number | null>(null);
   const [estimatedCost, setEstimatedCost] = useState<number | null>(null);
+  const { addToHistory } = useGenerationHistory();
 
   
   // Persistent setters
@@ -195,6 +198,15 @@ export default function VoiceIsolator() {
       const audioUrl = URL.createObjectURL(blob);
       
       setProcessedAudioUrl(audioUrl);
+      
+      // Add to history
+      addToHistory({
+        type: 'voice-isolator',
+        input: audioFile.name || 'Audio file',
+        audioUrl: audioUrl,
+        // No voiceName for voice isolation
+      });
+      
       toast.success('Voice isolated successfully!');
     } catch (error: any) {
       console.error('Voice isolation error:', error);
@@ -354,6 +366,11 @@ export default function VoiceIsolator() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Generation History */}
+      <div className="mt-8">
+        <GenerationHistoryPanel />
+      </div>
     </div>
   );
 }

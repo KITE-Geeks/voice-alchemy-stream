@@ -12,6 +12,9 @@ import { Play, Loader2, Trash2, Upload } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavTabs } from '@/components/NavTabs';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useGenerationHistory } from '@/contexts/GenerationHistoryContext';
+import { GenerationHistoryPanel } from '@/components/GenerationHistoryPanel';
+import { Download } from 'lucide-react';
 
 // --- Persistence Utilities ---
 import { saveToStorage, loadFromStorage, removeFromStorage, saveFileToStorage, loadFileFromStorage } from '@/utils/storage';
@@ -165,6 +168,7 @@ export default function SpeechToSpeech() {
   const navigate = useNavigate();
   const apiKey = location.state?.apiKey || '';
   const { t } = useLanguage();
+  const { addToHistory } = useGenerationHistory();
 
   const [voices, setVoices] = useState<Voice[]>([]);
   const [stability, setStability] = useState(0.5);
@@ -299,11 +303,29 @@ export default function SpeechToSpeech() {
       const response = await elevenlabsApi.speechToSpeech(
         apiKey,
         audioFile,
-        selectedVoice
+        selectedVoice,
+        stability,
+        similarityBoost
       );
+      
+      const audioUrl = `data:audio/mp3;base64,${response.audio}`;
       setConvertedAudio(response.audio);
+      
+      // Add to history
+      const voice = voices.find(v => v.voice_id === selectedVoice);
+      if (voice) {
+        addToHistory({
+          type: 'speech-to-speech',
+          input: audioFile.name || 'Recorded audio',
+          voiceName: voice.name,
+          audioUrl: audioUrl,
+          timestamp: new Date().toISOString()
+        });
+      }
+      
       toast.success('Audio converted successfully');
-    } catch {
+    } catch (error) {
+      console.error('Conversion error:', error);
       toast.error('Failed to convert audio');
     } finally {
       setIsGenerating(false);
@@ -313,9 +335,10 @@ export default function SpeechToSpeech() {
   // Download converted audio
   const handleDownload = () => {
     if (!convertedAudio) return;
+    
     const link = document.createElement('a');
-    link.href = `data:audio/mpeg;base64,${convertedAudio}`;
-    link.download = 'converted_audio.mp3';
+    link.href = convertedAudio;
+    link.download = `speech-to-speech-${new Date().toISOString().slice(0, 10)}.mp3`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -590,6 +613,11 @@ export default function SpeechToSpeech() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Generation History */}
+      <div className="w-full max-w-2xl mt-8">
+        <GenerationHistoryPanel />
+      </div>
     </div>
   );
 }
