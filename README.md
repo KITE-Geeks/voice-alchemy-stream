@@ -1,49 +1,90 @@
 # Voice Alchemy Stream
 
-## Project info
-A simple frontend that gives access to Elevenlabs features when providing it with a valid API-key. 
-Meant for sharing access without compromising your account.
+## Project Info
+A secure frontend interface for ElevenLabs' voice synthesis features, designed to safely share API access without compromising your account credentials.
 
-## Currently functional features:
+## Features
 
-- Text-to-Speech: Convert written text to spoken audio using ElevenLabs voices
-- Speech-to-Speech: Convert audio recordings to different voices
-- Sound Effects: Generate sound effects based on text prompts
+### Text-to-Speech
+- Convert written text to natural-sounding speech
+- Support for multiple voices and languages
+- **Upcoming V3 Model Support** (pending ElevenLabs API release)
+  - Enhanced emotional range and expressiveness
+  - Advanced vocal delivery customization (laughs, sighs, whispers, etc.)
+  - Built-in audio effects (echo, reverb, chorus, etc.)
 
-## What technologies are used for this project?
+### Speech-to-Speech
+- Convert audio recordings to different voices
+- Maintain natural speech patterns and intonation
 
-This project is built with:
+### Sound Effects
+- Generate sound effects from text prompts
+- Multiple effect variations
+- Real-time preview
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-- ElevenLabs API
+### Voice Isolator
+- Remove background noise from audio recordings
+- Enhance voice clarity
+- Support for various audio formats
 
-## Codebase Architecture
+## Technologies
 
-### Directory Structure
+- ⚡ Vite - Next Generation Frontend Tooling
+- 🎨 React 18 with TypeScript
+- 🖥️ shadcn/ui - Beautifully designed components
+- 🎨 Tailwind CSS - Utility-first CSS framework
+- 🚀 ElevenLabs API - Industry-leading voice synthesis
+- 🌐 i18n - Multi-language support (English & German)
 
-- `/src/api`: API client implementations for ElevenLabs
-- `/src/components`: Reusable React components
-- `/src/pages`: Main application pages/features
-- `/src/types`: TypeScript type definitions
-- `/src/utils`: Utility functions and helpers
+## Project Structure
 
-### Key Features
+```
+src/
+├── api/               # API client implementations
+├── components/         # Reusable UI components
+├── contexts/           # React context providers
+│   ├── GenerationHistoryContext.tsx
+│   └── LanguageContext.tsx
+├── pages/              # Main application pages
+│   ├── Index.tsx
+│   ├── text-to-speech.tsx
+│   ├── speech-to-speech.tsx
+│   ├── sound-fx.tsx
+│   └── voice-isolator.tsx
+├── types/              # TypeScript type definitions
+└── utils/              # Utility functions
+    └── storage.ts      # Local storage management
+```
 
-- **Unified API Implementation**: All ElevenLabs API interactions are centralized in the `elevenlabsApi.unified.ts` file, providing both class-based and functional access patterns.
-- **Type Safety**: Comprehensive TypeScript types for all API responses and parameters.
-- **Local Storage Management**: Centralized storage utilities in `utils/storage.ts` for consistent data persistence.
-- **Responsive UI**: Modern, responsive interface built with shadcn-ui components.
+## Key Features
 
-### Recent Improvements
+### Technical Highlights
+- **Unified API Layer**: Centralized API client with consistent error handling
+- **Type Safety**: Comprehensive TypeScript integration
+- **State Management**: React Context for global state
+- **Responsive Design**: Mobile-first, fully responsive UI
+- **i18n Support**: Built-in internationalization
+- **Persistent Storage**: User preferences and history saved locally
 
-- **Consolidated API Implementation**: Combined functional and class-based API implementations into a single unified approach.
-- **Centralized Type Definitions**: Moved all types to dedicated type files for better organization.
-- **Storage Utilities**: Created reusable storage utilities to standardize localStorage interactions.
-- **Consistent Import Paths**: Standardized import paths using the `@/` prefix for better maintainability.
-- **Code Cleanup**: Removed duplicate code and unused files to improve maintainability.
+## Getting Started
 
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Create a `.env` file with your ElevenLabs API key:
+   ```
+   VITE_ELEVENLABS_API_KEY=your_api_key_here
+   ```
+4. Start the development server: `npm run dev`
+5. Open [http://localhost:5173](http://localhost:5173) in your browser
+
+## Contributing
+
+1. Create a new branch: `git checkout -b feature/your-feature`
+2. Make your changes and commit them
+3. Push to the branch: `git push origin feature/your-feature`
+4. Open a pull request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 

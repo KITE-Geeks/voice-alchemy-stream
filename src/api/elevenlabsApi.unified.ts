@@ -161,20 +161,52 @@ export class ElevenLabsAPI {
    * Converts text to speech
    * @param text The text to convert
    * @param voiceId The ID of the voice to use
+   * @param stability Voice stability setting (0-1)
+   * @param similarityBoost Voice similarity boost (0-1)
+   * @param useV3 Whether to use the v3 model
+   * @param emotion Optional emotion for v3 model
+   * @param soundEffect Optional sound effect for v3 model
    * @returns Promise resolving to base64 encoded audio
    */
-  async textToSpeech(text: string, voiceId: string): Promise<string> {
+  async textToSpeech(
+    text: string, 
+    voiceId: string, 
+    stability: number = 0.5, 
+    similarityBoost: number = 0.75,
+    useV3: boolean = false,
+    emotion?: string,
+    soundEffect?: string
+  ): Promise<string> {
     try {
+      // Common request body structure for both v2 and v3
+      const requestBody: any = {
+        text,
+        model_id: useV3 ? 'eleven_v3' : 'eleven_multilingual_v2',
+        voice_settings: {
+          stability,
+          similarity_boost: similarityBoost,
+        }
+      };
+
+      // Add v3 specific parameters if using v3
+      if (useV3) {
+        // Add emotion if provided and not 'none'
+        if (emotion && emotion !== 'none') {
+          requestBody.emotion = emotion;
+        }
+        // Add sound effect if provided and not 'none'
+        if (soundEffect && soundEffect !== 'none') {
+          requestBody.sound_effect = soundEffect;
+        }
+      }
+
+      // Use the standard endpoint for both v2 and v3
+      const endpoint = `${ELEVENLABS_API_URL}/text-to-speech/${voiceId}`;
+      console.log('Using endpoint:', endpoint, 'with model:', useV3 ? 'eleven_v3' : 'eleven_multilingual_v2');
+      
       const response = await axios.post<ArrayBuffer>(
-        `${ELEVENLABS_API_URL}/text-to-speech/${voiceId}`,
-        {
-          text,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-          },
-        },
+        endpoint,
+        requestBody,
         {
           headers: {
             'Accept': 'audio/mpeg',
@@ -404,11 +436,33 @@ export const elevenlabsApi = {
    * @param apiKey The ElevenLabs API key
    * @param text The text to convert
    * @param voiceId The ID of the voice to use
+   * @param stability Voice stability setting (0-1)
+   * @param similarityBoost Voice similarity boost (0-1)
+   * @param useV3 Whether to use the v3 model
+   * @param emotion Optional emotion for v3 model
+   * @param soundEffect Optional sound effect for v3 model
    * @returns Promise resolving to base64 encoded audio
    */
-  async textToSpeech(apiKey: string, text: string, voiceId: string): Promise<TextToSpeechResponse> {
+  async textToSpeech(
+    apiKey: string, 
+    text: string, 
+    voiceId: string,
+    stability: number = 0.5,
+    similarityBoost: number = 0.75,
+    useV3: boolean = false,
+    emotion?: string,
+    soundEffect?: string
+  ): Promise<TextToSpeechResponse> {
     const api = new ElevenLabsAPI(apiKey);
-    const audio = await api.textToSpeech(text, voiceId);
+    const audio = await api.textToSpeech(
+      text, 
+      voiceId, 
+      stability, 
+      similarityBoost, 
+      useV3, 
+      emotion, 
+      soundEffect
+    );
     return { audio };
   },
 

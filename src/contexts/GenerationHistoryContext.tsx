@@ -10,6 +10,9 @@ export interface GenerationHistoryItem {
   voiceName?: string;
   audioUrl: string;
   audioBlob?: Blob;
+  model?: string;
+  emotion?: string;
+  soundEffect?: string;
 }
 
 interface GenerationHistoryContextType {
