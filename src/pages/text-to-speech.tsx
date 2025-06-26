@@ -432,6 +432,53 @@ export default function TextToSpeech() {
                 </div>
               </div>
               
+              {/* Advanced Settings for non-v3 mode */}
+              {!useV3 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">{t('text_to_speech.advanced_settings')}</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="stability-standard">{t('text_to_speech.stability')}</Label>
+                        <span className="text-sm text-muted-foreground">{stability.toFixed(1)}</span>
+                      </div>
+                      <Slider
+                        id="stability-standard"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={[stability]}
+                        onValueChange={(value) => setStability(value[0])}
+                        className="w-full"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {t('text_to_speech.stability_description')}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="similarity-boost-standard">{t('text_to_speech.similarity_boost')}</Label>
+                        <span className="text-sm text-muted-foreground">{similarityBoost.toFixed(1)}</span>
+                      </div>
+                      <Slider
+                        id="similarity-boost-standard"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={[similarityBoost]}
+                        onValueChange={(value) => setSimilarityBoost(value[0])}
+                        className="w-full"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        {t('text_to_speech.similarity_boost_description')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               {/* Generate Button - Only show if not in v3 mode */}
               {!useV3 && (
                 <div className="mt-4">
@@ -497,58 +544,48 @@ export default function TextToSpeech() {
                   <p className="text-xs text-muted-foreground mt-2">
                     {t('text_to_speech.example_tags_description')}
                   </p>
-                  <div>
-                    <div 
-                      className="cursor-pointer flex items-center justify-between mt-4 pt-2 border-t"
-                      onClick={() => setShowAdvanced(!showAdvanced)}
-                    >
-                      <h3 className="text-sm font-medium">
-                        {t('text_to_speech.advanced_settings')}
-                      </h3>
-                      {showAdvanced ? (
-                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </div>
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">{t('text_to_speech.advanced_settings')}</h3>
                     
-                    {showAdvanced && (
-                      <div className="space-y-4 pl-2 border-l-2 border-muted mt-2">
-                        <div>
-                          <Label>
-                            {t('text_to_speech.stability')} ({stability.toFixed(1)})
-                          </Label>
-                          <Slider
-                            value={[stability]}
-                            onValueChange={([value]) => setStability(value)}
-                            min={0}
-                            max={1}
-                            step={0.1}
-                            className="my-2"
-                          />
-                          <div className="text-xs text-muted-foreground">
-                            {t('text_to_speech.stability_description')}
-                          </div>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="stability">{t('text_to_speech.stability')}</Label>
+                          <span className="text-sm text-muted-foreground">{stability.toFixed(1)}</span>
                         </div>
-
-                        <div>
-                          <Label>
-                            {t('text_to_speech.similarity_boost')} ({similarityBoost.toFixed(1)})
-                          </Label>
-                          <Slider
-                            value={[similarityBoost]}
-                            onValueChange={([value]) => setSimilarityBoost(value)}
-                            min={0}
-                            max={1}
-                            step={0.1}
-                            className="my-2"
-                          />
-                          <div className="text-xs text-muted-foreground">
-                            {t('text_to_speech.similarity_boost_description')}
-                          </div>
-                        </div>
+                        <Slider
+                          id="stability"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={[stability]}
+                          onValueChange={(value) => setStability(value[0])}
+                          className="w-full"
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          {t('text_to_speech.stability_description')}
+                        </p>
                       </div>
-                    )}
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="similarity-boost">{t('text_to_speech.similarity_boost')}</Label>
+                          <span className="text-sm text-muted-foreground">{similarityBoost.toFixed(1)}</span>
+                        </div>
+                        <Slider
+                          id="similarity-boost"
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          value={[similarityBoost]}
+                          onValueChange={(value) => setSimilarityBoost(value[0])}
+                          className="w-full"
+                        />
+                        <p className="text-sm text-muted-foreground">
+                          {t('text_to_speech.similarity_boost_description')}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                   <div className="mt-4">
                     <Button 

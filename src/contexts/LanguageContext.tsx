@@ -64,9 +64,9 @@ const translations = {
     'text_to_speech.enter_text': 'Enter Text',
     'text_to_speech.text_placeholder': 'Type or paste your text here...',
     'text_to_speech.stability': 'Stability',
-    'text_to_speech.similarity_boost': 'Similarity Boost',
     'text_to_speech.stability_description': 'Higher values will make the voice more stable and consistent, but may lose some expressiveness.',
-    'text_to_speech.similarity_description': 'Higher values will make the voice more similar to the original voice, but may reduce quality.',
+    'text_to_speech.similarity_boost': 'Similarity Boost',
+    'text_to_speech.similarity_boost_description': 'Enhances the similarity to the original voice. Higher values make the generated voice more similar to the selected voice.',
     'text_to_speech.generate_audio': 'Generate Audio',
     'text_to_speech.download_generated': 'Download Generated Audio',
     'text_to_speech.vocal_delivery': 'Vocal Delivery',
@@ -201,6 +201,22 @@ const translations = {
     'text_to_speech.title': 'Text zu Sprache',
     'text_to_speech.enter_text': 'Text eingeben',
     'text_to_speech.generate_audio': 'Audio generieren',
+    'text_to_speech.stability': 'Stabilität',
+    'text_to_speech.stability_description': 'Kontrolliert, wie stabil die Sprachgenerierung ist. Höhere Werte erzeugen konsistentere Ergebnisse.',
+    'text_to_speech.similarity_boost': 'Ähnlichkeits-Boost',
+    'text_to_speech.similarity_boost_description': 'Verstärkt die Ähnlichkeit zur ursprünglichen Stimme. Höhere Werte machen die generierte Stimme ähnlicher zur ausgewählten Stimme.',
+    'text_to_speech.vocal_delivery': 'Stimmausdruck',
+    'text_to_speech.audio_effect': 'Audioeffekt',
+    'text_to_speech.select_vocal_expression': 'Stimmausdruck auswählen',
+    'text_to_speech.select_audio_effect': 'Audioeffekt auswählen',
+    'text_to_speech.no_effect': 'Kein Effekt',
+    'text_to_speech.use_v3_model': 'V3-Modell verwenden (Experimentell)',
+    'text_to_speech.advanced_settings': 'Erweiterte Einstellungen',
+    'text_to_speech.vocal_delivery_description': 'Füge Ausdrucks-Tags hinzu, um die Sprachwiedergabe zu verändern',
+    'text_to_speech.audio_effect_description': 'Wende spezielle Audioeffekte auf die generierte Sprache an',
+    'text_to_speech.example_tags_description': 'Das sind nur Beispiel-Tags - experimentiere gerne mit verschiedenen Anweisungen, Kombinationen und Sound-Effekten, um den gewünschten Stimmeffekt zu erzielen.',
+    'text_to_speech.text_placeholder': 'Gib deinen Text hier ein oder füge ihn ein...',
+    'text_to_speech.download_generated': 'Generiertes Audio herunterladen',
     
     // Vocal Delivery Options
     'text_to_speech.vocal_delivery_laughs': 'Lacht',
@@ -244,19 +260,6 @@ const translations = {
     'text_to_speech.sound_effect_vintage_radio': 'Vintage Radio',
     'text_to_speech.sound_effect_dark_whisper': 'Dunkles Flüstern',
     
-    'text_to_speech.vocal_delivery': 'Stimmausdruck',
-    'text_to_speech.audio_effect': 'Audioeffekt',
-    'text_to_speech.select_vocal_expression': 'Stimmausdruck auswählen',
-    'text_to_speech.select_audio_effect': 'Audioeffekt auswählen',
-    'text_to_speech.no_effect': 'Kein Effekt',
-    'text_to_speech.use_v3_model': 'V3-Modell verwenden (Experimentell)',
-    'text_to_speech.advanced_settings': 'Erweiterte Einstellungen',
-    'text_to_speech.vocal_delivery_description': 'Füge Ausdrucks-Tags hinzu, um die Sprachwiedergabe zu verändern',
-    'text_to_speech.audio_effect_description': 'Wende spezielle Audioeffekte auf die generierte Sprache an',
-    'text_to_speech.example_tags_description': 'Das sind nur Beispiel-Tags - experimentiere gerne mit verschiedenen Anweisungen, Kombinationen und Sound-Effekten, um den gewünschten Stimmeffekt zu erzielen.',
-    'text_to_speech.text_placeholder': 'Gib deinen Text hier ein oder füge ihn ein...',
-    'text_to_speech.download_generated': 'Generiertes Audio herunterladen',
-    
     // Speech to Speech
     'speech_to_speech.title': 'Sprache-zu-Sprache-Konverter',
     'speech_to_speech.audio_input': 'Audio-Eingabe',
@@ -295,7 +298,8 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   const t = (key: string, params?: Record<string, string | number>): string => {
-    let translatedText = translations[language][key as keyof typeof translations[typeof language]] || key;
+    const languageTranslations = translations[language];
+    let translatedText = (languageTranslations as any)[key] || key;
     
     // Replace parameters if provided
     if (params) {
