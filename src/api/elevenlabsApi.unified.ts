@@ -188,17 +188,8 @@ export class ElevenLabsAPI {
         }
       };
 
-      // Add v3 specific parameters if using v3
-      if (useV3) {
-        // Add emotion if provided and not 'none'
-        if (emotion && emotion !== 'none') {
-          requestBody.emotion = emotion;
-        }
-        // Add sound effect if provided and not 'none'
-        if (soundEffect && soundEffect !== 'none') {
-          requestBody.sound_effect = soundEffect;
-        }
-      }
+      // NOTE: ElevenLabs v3 uses inline audio tags within `text` for delivery/effects.
+      // Do not send separate `emotion` or `sound_effect` fields; those were placeholders.
 
       // Use the standard endpoint for both v2 and v3
       const endpoint = `${ELEVENLABS_API_URL}/text-to-speech/${voiceId}`;
