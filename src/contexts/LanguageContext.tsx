@@ -200,8 +200,8 @@ const translations = {
     
     // Music
     'music.title': 'Musik',
-    'music.prompt_label': 'Beschreibe die Musik, die du generieren möchtest',
-    'music.prompt_placeholder': 'z.B. Ein kinoreifes Orchesterstück mit schwebenden Violinen und epischem Schlagzeug...',
+    'music.prompt_label': 'Beschreibe die Musik, die du generieren möchtest (Englisch empfohlen)',
+    'music.prompt_placeholder': 'z.B. A cinematic orchestra piece with floating violins and epic percussion...',
     'music.duration': 'Dauer',
     'music.generate': 'Musik generieren',
     'music.generating': 'Wird generiert...',
@@ -300,7 +300,11 @@ const translations = {
     'text_to_speech.sound_effect_vintage_radio': 'Vintage Radio',
     'text_to_speech.sound_effect_dark_whisper': 'Dunkles Flüstern',
     
+    // Sound FX
+    'sound_fx.title': 'Soundeffekte',
     'sound_fx.english_note': 'Hinweis: Für beste Ergebnisse sollten Prompts auf Englisch eingegeben werden.',
+    'sound_fx.prompt_label': 'Beschreibe den Soundeffekt, den du generieren möchtest (Englisch empfohlen)',
+    'sound_fx.prompt_placeholder': 'z.B. \'Cinematic Braam, Horror\' oder \'Rain falling on a tin roof\'',
     'sound_fx.duration': 'Dauer',
     'sound_fx.auto': 'Auto',
     'sound_fx.prompt_adherence': 'Prompt-Einhaltung',
