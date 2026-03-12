@@ -11,7 +11,9 @@ import {
   SoundFXVariation, 
   SoundFXResponse, 
   SoundFXParams,
-  VoiceIsolatorResponse 
+  VoiceIsolatorResponse,
+  MusicParams,
+  MusicResponse
 } from '@/types/voice';
 
 // API Constants
@@ -69,16 +71,24 @@ export const calculateSpeechToSpeechCost = (durationInSeconds: number): number =
  * @returns The estimated cost in credits
  */
 export const calculateSoundFXCost = (text: string, duration: number, variationCount: number): number => {
-  // Base cost for the prompt
-  const promptCost = text.length * 0.00003;
+  // According to ElevenLabs official API pricing (as of May 2025):
+  // - 100 credits per generation with auto duration
+  // - 20 credits per second when duration is specified
   
-  // Cost per second of audio
-  const durationCost = duration * 0.015;
+  let costPerVariation;
+  if (duration === 0) {
+    // Auto duration mode - API pricing
+    costPerVariation = 100;
+  } else {
+    // Specific duration mode - API pricing
+    costPerVariation = 20 * duration;
+  }
   
-  // Multiply by the number of variations
-  const totalCost = (promptCost + durationCost) * variationCount;
+  // Calculate total cost based on number of variations
+  const totalCost = costPerVariation * variationCount;
   
-  return Math.ceil(totalCost * 100) / 100; // Round up to 2 decimal places
+  // Return as whole number (no fractional credits)
+  return Math.ceil(totalCost);
 };
 
 /**
@@ -173,6 +183,7 @@ export class ElevenLabsAPI {
     voiceId: string, 
     stability: number = 0.5, 
     similarityBoost: number = 0.75,
+    speed: number = 1.0,
     useV3: boolean = false,
     emotion?: string,
     soundEffect?: string
@@ -185,6 +196,8 @@ export class ElevenLabsAPI {
         voice_settings: {
           stability,
           similarity_boost: similarityBoost,
+          speed: speed,
+          ...(useV3 && soundEffect !== 'none' ? { voice_effect: soundEffect } : {})
         }
       };
 
@@ -226,9 +239,16 @@ export class ElevenLabsAPI {
    * Converts audio using Voice Conversion API
    * @param sourceAudioFile The source audio file
    * @param targetVoiceId The ID of the target voice
+   * @param stability Voice stability setting (0-1)
+   * @param similarityBoost Voice similarity boost (0-1)
    * @returns Promise resolving to audio blob
    */
-  async convertAudio(sourceAudioFile: File, targetVoiceId: string): Promise<Blob> {
+  async convertAudio(
+    sourceAudioFile: File, 
+    targetVoiceId: string,
+    stability: number = 0.5,
+    similarityBoost: number = 0.75
+  ): Promise<Blob> {
     try {
       console.log('Converting audio with targetVoiceId:', targetVoiceId);
       console.log('Audio file type:', sourceAudioFile.type, 'size:', sourceAudioFile.size);
@@ -236,8 +256,14 @@ export class ElevenLabsAPI {
       // Create form data with the correct parameters
       const formData = new FormData();
       formData.append('audio', sourceAudioFile);
-      formData.append('voice_id', targetVoiceId);
       formData.append('model_id', 'eleven_multilingual_sts_v2');
+      
+      // Add voice settings as JSON string if provided
+      const voiceSettings = {
+        stability,
+        similarity_boost: similarityBoost,
+      };
+      formData.append('voice_settings', JSON.stringify(voiceSettings));
       
       // Use the correct endpoint for speech-to-speech conversion
       const response = await fetch(`${ELEVENLABS_API_URL}/speech-to-speech/${targetVoiceId}`, {
@@ -307,7 +333,7 @@ export class ElevenLabsAPI {
         audio: response.data,
         mimeType: 'audio/mpeg',
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Voice isolation error:', error);
       if (error.response) {
         console.error('Error details:', {
@@ -327,49 +353,51 @@ export class ElevenLabsAPI {
   async generateSoundFX(params: SoundFXParams): Promise<SoundFXResponse> {
     try {
       console.log('Using ElevenLabs API URL:', ELEVENLABS_API_URL);
-      const numVariations = params.num_variations || 4;
+      const numVariations = params.num_variations || 1;
       console.log(`Generating ${numVariations} variations of sound effect`);
       
-      // Make separate API calls for each variation to get truly different results
       const variations = [];
       const apiRequests = [];
       
-      // Create array of API requests
+      // ElevenLabs sound generation endpoint
+      const url = `${ELEVENLABS_API_URL}/sound-generation`;
+      
       for (let i = 0; i < numVariations; i++) {
+        const requestData: any = {
+          text: params.text,
+          model_id: params.model_id || 'eleven_text_to_sound_v2',
+        };
+
+        if (params.duration_seconds && params.duration_seconds > 0) {
+          requestData.duration_seconds = params.duration_seconds;
+        }
+
+        if (params.prompt_influence !== undefined) {
+          requestData.prompt_influence = params.prompt_influence;
+        }
+
         apiRequests.push(
-          axios({
-            method: 'post',
-            url: `${ELEVENLABS_API_URL}/sound-generation`,
-            data: {
-              text: params.text,
-              model_id: params.model_id || 'eleven_creative_studio_sound_effects',
-              output_format: params.output_format || 'mp3_44100_128',
-              // Don't include num_variations parameter here as we're making separate calls
-            },
-            headers: {
-              'Content-Type': 'application/json',
-              'xi-api-key': this.apiKey,
-              'accept': 'audio/mpeg',
-            },
-            responseType: 'arraybuffer',
-          })
+          axios.post<ArrayBuffer>(
+            url,
+            requestData,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'xi-api-key': this.apiKey,
+                'accept': 'audio/mpeg',
+              },
+              responseType: 'arraybuffer',
+            }
+          )
         );
       }
       
-      // Execute all requests in parallel
-      console.log('Making parallel API requests for variations');
+      console.log(`Making ${apiRequests.length} parallel API requests for variations`);
       const responses = await Promise.all(apiRequests);
       
-      // Process each response
       for (let i = 0; i < responses.length; i++) {
-        const response = responses[i];
-        if (!(response.data instanceof ArrayBuffer)) {
-          console.warn(`Invalid response format for variation ${i}: expected ArrayBuffer`);
-          continue;
-        }
-        
         variations.push({
-          audio: response.data,
+          audio: responses[i].data,
           mimeType: 'audio/mpeg',
         });
       }
@@ -380,20 +408,156 @@ export class ElevenLabsAPI {
       
       console.log(`Successfully generated ${variations.length} sound effect variations`);
       return { variations };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate sound effect:', error);
       if (error.response) {
-        console.error('Error details:', {
-          status: error.response.status,
-          data: error.response.data,
-          headers: error.response.headers,
-        });
-        const errorMessage = typeof error.response.data === 'object' && error.response.data.detail 
-          ? error.response.data.detail 
-          : error.message;
-        throw new Error(`Failed to generate sound effect: ${errorMessage}`);
+        let errorMessage = 'Failed to generate sound effect';
+        try {
+          if (error.response.data instanceof ArrayBuffer) {
+            const decodedString = new TextDecoder().decode(error.response.data);
+            const errorData = JSON.parse(decodedString);
+            errorMessage = errorData.detail?.message || errorData.detail || errorMessage;
+          } else {
+            errorMessage = error.response.data?.detail?.message || error.response.data?.detail || errorMessage;
+          }
+        } catch (e) {
+          console.error('Error parsing error response:', e);
+        }
+        throw new Error(`API Error: ${errorMessage}`);
       }
-      throw new Error('Failed to generate sound effect');
+      throw error;
+    }
+  }
+
+  /**
+   * Generates music based on a text prompt or lyrics
+   * @param params The music generation parameters
+   * @returns Promise resolving to generated music audio
+   */
+  async generateMusic(params: MusicParams): Promise<MusicResponse> {
+    try {
+      console.log('Generating music with params:', JSON.stringify({
+        prompt: params.prompt,
+        hasLyrics: !!params.lyrics,
+        instrumental: params.instrumental,
+        duration: params.duration_seconds
+      }));
+      
+      const requestData: any = {};
+      
+      if (params.lyrics) {
+        // For lyrics, we need to use composition_plan, but handle auto-duration differently
+        if (params.duration_seconds && params.duration_seconds > 0) {
+          // Specific duration requested - use composition_plan with explicit durations
+          const maxDurationMs = 120000; // 2 minutes in milliseconds
+          const requestedDurationMs = Math.min(params.duration_seconds * 1000, maxDurationMs);
+          
+          // Split lyrics into lines and enforce 200 character limit per line
+          const lyricsLines = params.lyrics.split('\n').filter(line => line.trim() !== '');
+          const truncatedLines = lyricsLines.map(line => {
+            if (line.length > 200) {
+              console.warn(`Lyrics line truncated from ${line.length} to 200 characters`);
+              return line.substring(0, 200);
+            }
+            return line;
+          });
+          
+          requestData.composition_plan = {
+            positive_global_styles: params.prompt ? [params.prompt] : ['Pop song'],
+            negative_global_styles: [],
+            sections: [
+              {
+                section_name: 'Intro',
+                type: 'instrumental',
+                prompt: params.prompt || 'Instrumental intro',
+                positive_local_styles: [],
+                negative_local_styles: [],
+                duration_ms: Math.max(Math.floor(requestedDurationMs * 0.2), 3000), // Min 3s per section
+                lines: []
+              },
+              {
+                section_name: 'Verse',
+                type: 'vocal',
+                prompt: params.prompt || 'Vocal verse',
+                lyrics: truncatedLines.join('\n'),
+                positive_local_styles: [],
+                negative_local_styles: [],
+                duration_ms: Math.max(Math.floor(requestedDurationMs * 0.8), 3000), // Min 3s per section
+                lines: truncatedLines
+              }
+            ]
+          };
+          // respect_sections_durations ensures that model sticks to the plan's timing
+          requestData.respect_sections_durations = true;
+        } else {
+          // Auto duration - use simple prompt + lyrics approach
+          const combinedPrompt = params.lyrics 
+            ? `${params.prompt || 'Pop song'} use these lyrics: ${params.lyrics}`
+            : params.prompt || 'Pop song';
+            
+          requestData.prompt = combinedPrompt;
+          
+          if (params.instrumental !== undefined) {
+            requestData.force_instrumental = params.instrumental;
+          }
+        }
+      } else {
+        requestData.prompt = params.prompt;
+        if (params.duration_seconds && params.duration_seconds > 0) {
+          requestData.duration_seconds = params.duration_seconds;
+        }
+        
+        if (params.instrumental !== undefined) {
+          requestData.force_instrumental = params.instrumental;
+        }
+      }
+
+      console.log('Sending to ElevenLabs API:', JSON.stringify(requestData, null, 2));
+      
+      const response = await axios.post<ArrayBuffer>(
+        `${ELEVENLABS_API_URL}/music/compose`,
+        requestData,
+        {
+          headers: {
+            'xi-api-key': this.apiKey,
+            'Content-Type': 'application/json',
+            'accept': 'audio/mpeg',
+          },
+          responseType: 'arraybuffer',
+        }
+      );
+
+      return {
+        audio: response.data,
+        mimeType: 'audio/mpeg',
+      };
+    } catch (error: any) {
+      console.error('Music generation error:', error);
+      if (error.response) {
+        let errorMessage = 'Failed to generate music';
+        try {
+          if (error.response.data instanceof ArrayBuffer) {
+            const decodedString = new TextDecoder().decode(error.response.data);
+            const errorData = JSON.parse(decodedString);
+            console.error('Parsed API Error Data:', errorData);
+            errorMessage = errorData.detail?.message || errorData.detail || JSON.stringify(errorData) || errorMessage;
+          } else {
+            console.error('API Error Data:', error.response.data);
+            console.error('Full error response:', JSON.stringify(error.response.data, null, 2));
+            if (error.response.data.detail && Array.isArray(error.response.data.detail)) {
+              console.error('Validation errors:', error.response.data.detail);
+              error.response.data.detail.forEach((err: any, index: number) => {
+                console.error(`Error ${index + 1}:`, err);
+              });
+            }
+            errorMessage = error.response.data?.detail?.message || error.response.data?.detail || JSON.stringify(error.response.data) || errorMessage;
+          }
+        } catch (e) {
+          console.error('Error parsing error response:', e);
+        }
+        throw new Error(`API Error: ${errorMessage}`);
+      }
+      throw error;
     }
   }
 }
@@ -440,21 +604,57 @@ export const elevenlabsApi = {
     voiceId: string,
     stability: number = 0.5,
     similarityBoost: number = 0.75,
+    speed: number = 1.0,
     useV3: boolean = false,
     emotion?: string,
     soundEffect?: string
   ): Promise<TextToSpeechResponse> {
     const api = new ElevenLabsAPI(apiKey);
-    const audio = await api.textToSpeech(
-      text, 
-      voiceId, 
-      stability, 
-      similarityBoost, 
-      useV3, 
-      emotion, 
-      soundEffect
+    
+    // Use correct ElevenLabs API request body format
+    const endpoint = `${ELEVENLABS_API_URL}/text-to-speech/${voiceId}`;
+    const requestBody: any = {
+      text,
+      model_id: useV3 ? 'eleven_v3' : 'eleven_multilingual_v2',
+      voice_settings: {
+        stability,
+        similarity_boost: similarityBoost,
+        speed,
+        ...(useV3 && soundEffect !== 'none' ? { voice_effect: soundEffect } : {})
+      }
+    };
+    
+    console.log('Using endpoint:', endpoint, 'with model:', useV3 ? 'eleven_v3' : 'eleven_multilingual_v2');
+    console.log('Voice settings:', {
+      stability,
+      similarity_boost: similarityBoost,
+      speed,
+      use_v3: useV3,
+      ...(useV3 && soundEffect !== 'none' ? { voice_effect: soundEffect } : {})
+    });
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    
+    const response = await axios.post<ArrayBuffer>(
+      endpoint,
+      requestBody, // Send as JSON body
+      {
+        headers: {
+          'Accept': 'audio/mpeg',
+          'xi-api-key': apiKey,
+          'Content-Type': 'application/json'
+        },
+        responseType: 'arraybuffer',
+      }
     );
-    return { audio };
+    
+    // Convert ArrayBuffer to base64
+    const uint8Array = new Uint8Array(response.data);
+    let binary = '';
+    for (let i = 0; i < uint8Array.byteLength; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+    const base64Audio = btoa(binary);
+    return { audio: base64Audio };
   },
 
   /**
@@ -462,11 +662,19 @@ export const elevenlabsApi = {
    * @param apiKey The ElevenLabs API key
    * @param audioFile The source audio file
    * @param voiceId The ID of the target voice
+   * @param stability Voice stability setting (0-1)
+   * @param similarityBoost Voice similarity boost (0-1)
    * @returns Promise resolving to base64 encoded audio
    */
-  async speechToSpeech(apiKey: string, audioFile: File, voiceId: string): Promise<SpeechToSpeechResponse> {
+  async speechToSpeech(
+    apiKey: string, 
+    audioFile: File, 
+    voiceId: string,
+    stability: number = 0.5,
+    similarityBoost: number = 0.75
+  ): Promise<SpeechToSpeechResponse> {
     const api = new ElevenLabsAPI(apiKey);
-    const blob = await api.convertAudio(audioFile, voiceId);
+    const blob = await api.convertAudio(audioFile, voiceId, stability, similarityBoost);
     
     // Convert blob to base64
     return new Promise((resolve, reject) => {
@@ -490,6 +698,29 @@ export const elevenlabsApi = {
   async generateSoundFX(apiKey: string, params: SoundFXParams): Promise<SoundFXResponse> {
     const api = new ElevenLabsAPI(apiKey);
     return api.generateSoundFX(params);
+  },
+
+  /**
+   * Generates music based on a text prompt
+   * @param apiKey The ElevenLabs API key
+   * @param params The music generation parameters
+   * @returns Promise resolving to generated music
+   */
+  async generateMusic(apiKey: string, params: MusicParams): Promise<MusicResponse> {
+    const api = new ElevenLabsAPI(apiKey);
+    return api.generateMusic(params);
+  },
+
+  /**
+   * Calculate the cost of music generation based on duration
+   * @param durationInSeconds The duration in seconds
+   * @returns The estimated cost in credits
+   */
+  calculateMusicCost(durationInSeconds: number): number {
+    // Official ElevenLabs Music API pricing:
+    // 25 credits per second of generated audio
+    const creditsPerSecond = 25;
+    return Math.ceil(durationInSeconds * creditsPerSecond);
   },
 
   /**

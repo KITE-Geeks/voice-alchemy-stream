@@ -228,23 +228,24 @@ export default function VoiceIsolator() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-      <Card className="w-full max-w-2xl">
-        <CardContent className="py-8">
-          <NavTabs activeTab="voice-isolator" apiKey={apiKey} />
-          <h1 className="text-2xl font-bold mb-6 text-center">{t('voice_isolator.title')}</h1>
-          
-          <div className="space-y-6">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>{t('voice_isolator.how_it_works')}</AlertTitle>
-              <AlertDescription>
-                {t('voice_isolator.description')}
-                <br></br>
-                <br></br>
-                <span className="font-bold text-amber-600 dark:text-amber-400">{t('voice_isolator.warning')}</span> ({t('common.eg')} <a target="_blank" rel="noopener noreferrer" href="https://deepfake-demo.aisec.fraunhofer.de/" className="underline">{t('voice_isolator.here')}</a>)
-              </AlertDescription>
-            </Alert>
+    <div className="min-h-screen flex flex-col items-center py-8 bg-background">
+      <div className="container mx-auto p-4 max-w-2xl">
+        <Card className="w-full">
+          <CardContent className="py-8 space-y-6">
+            <NavTabs activeTab="voice-isolator" apiKey={apiKey} />
+            <h1 className="text-2xl font-bold text-center">{t('voice_isolator.title')}</h1>
+            
+            <div className="space-y-6">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>{t('voice_isolator.how_it_works')}</AlertTitle>
+                <AlertDescription>
+                  {t('voice_isolator.description')}
+                  <br></br>
+                  <br></br>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">{t('voice_isolator.warning')}</span> ({t('common.eg')} <a target="_blank" rel="noopener noreferrer" href="https://deepfake-demo.aisec.fraunhofer.de/" className="underline">{t('voice_isolator.here')}</a>)
+                </AlertDescription>
+              </Alert>
 
             <div className="space-y-4">
               {/* Audio input */}
@@ -368,9 +369,10 @@ export default function VoiceIsolator() {
       </Card>
       
       {/* Generation History */}
-      <div className="mt-8">
+      <div className="mt-8 border-t pt-8 w-full max-w-2xl">
         <GenerationHistoryPanel />
       </div>
+    </div>
     </div>
   );
 }

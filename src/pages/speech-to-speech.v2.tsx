@@ -67,11 +67,9 @@ function AudioRecorder({ onAudioReady, initialAudioUrl }: { onAudioReady: (file:
   const [audioUrl, setAudioUrl] = useState<string | null>(initialAudioUrl || null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const { t } = useLanguage();
 
-  // Convert WebM Blob to WAV Blob using audiobuffer-to-wav
   const webmBlobToWav = async (blob: Blob): Promise<Blob> => {
     const arrayBuffer = await blob.arrayBuffer();
     const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -135,7 +133,6 @@ function AudioRecorder({ onAudioReady, initialAudioUrl }: { onAudioReady: (file:
   };
 
   useEffect(() => {
-    // If initialAudioUrl changes (restored from storage), set it
     if (initialAudioUrl) {
       setAudioUrl(initialAudioUrl);
     }
@@ -213,29 +210,25 @@ export default function SpeechToSpeech() {
     saveInputModeToStorage(mode);
   };
 
-  // Function to analyze audio file and get its duration
   const analyzeAudioFile = (file: File): Promise<number> => {
     return new Promise((resolve) => {
       const audio = new Audio();
       const url = URL.createObjectURL(file);
-
+      
       audio.addEventListener('loadedmetadata', () => {
-        // Get duration in seconds
         const durationInSeconds = audio.duration;
         URL.revokeObjectURL(url);
         resolve(durationInSeconds);
       });
-
+      
       audio.src = url;
     });
   };
-
-  // On mount, restore last audio URL if possible and analyze audio file
+  
   useEffect(() => {
     if (audioFile && audioFile.type.startsWith('audio/')) {
       setLastAudioUrl(URL.createObjectURL(audioFile));
-
-      // Analyze audio file to get duration and calculate cost
+      
       analyzeAudioFile(audioFile).then(durationInSeconds => {
         setAudioDuration(durationInSeconds);
         const cost = calculateSpeechToSpeechCost(durationInSeconds);
@@ -246,7 +239,6 @@ export default function SpeechToSpeech() {
     }
   }, [audioFile]);
 
-  // Redirect if no API key
   useEffect(() => {
     if (!apiKey) {
       toast.error('API key missing. Please start from the landing page.');
@@ -254,7 +246,6 @@ export default function SpeechToSpeech() {
     }
   }, [apiKey, navigate]);
 
-  // Load voices
   useEffect(() => {
     if (apiKey && !voicesLoaded) {
       (async () => {
@@ -263,7 +254,6 @@ export default function SpeechToSpeech() {
           const voices = await elevenlabsApi.getVoices(apiKey);
           setVoices(voices);
           setVoicesLoaded(true);
-          toast.success('Voices loaded successfully');
         } catch {
           toast.error('Failed to load voices.');
         } finally {
@@ -273,17 +263,15 @@ export default function SpeechToSpeech() {
     }
   }, [apiKey, voicesLoaded]);
 
-  // Handle file upload
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setAudioFile(file);
-      setConvertedAudio(null); // Clear converted audio if new file is uploaded
+      setConvertedAudio(null);
       setInputMode('upload');
     }
   };
 
-  // Clear audio file (for both upload and record)
   const clearAudioFile = () => {
     setAudioFile(null);
     setConvertedAudio(null);
@@ -292,7 +280,6 @@ export default function SpeechToSpeech() {
     setEstimatedCost(null);
   };
 
-  // Convert audio
   const handleConvert = async () => {
     if (!apiKey || !selectedVoice || !audioFile) {
       toast.error('Please fill in all required fields');
@@ -303,25 +290,22 @@ export default function SpeechToSpeech() {
       const response = await elevenlabsApi.speechToSpeech(
         apiKey,
         audioFile,
-        selectedVoice,
-        stability,
-        similarityBoost
+        selectedVoice
       );
-
+      
       const audioUrl = `data:audio/mp3;base64,${response.audio}`;
       setConvertedAudio(response.audio);
-
-      // Add to history
+      
       const voice = voices.find(v => v.voice_id === selectedVoice);
       if (voice) {
         addToHistory({
           type: 'speech-to-speech',
           input: audioFile.name || 'Recorded audio',
           voiceName: voice.name,
-          audioUrl: audioUrl,
+          audioUrl: audioUrl
         });
       }
-
+      
       toast.success('Audio converted successfully');
     } catch (error) {
       console.error('Conversion error:', error);
@@ -331,10 +315,9 @@ export default function SpeechToSpeech() {
     }
   };
 
-  // Download converted audio
   const handleDownload = () => {
     if (!convertedAudio) return;
-
+    
     const link = document.createElement('a');
     link.href = `data:audio/mp3;base64,${convertedAudio}`;
     link.download = `speech-to-speech-${new Date().toISOString().slice(0, 10)}.mp3`;
@@ -343,7 +326,6 @@ export default function SpeechToSpeech() {
     document.body.removeChild(link);
   };
 
-  // Voice preview
   const handlePreviewVoice = async (voice: Voice) => {
     if (!voice.preview_url) {
       toast.error('No preview available for this voice.');
@@ -370,10 +352,8 @@ export default function SpeechToSpeech() {
     }
   };
 
-  // Filter voices to exclude hidden ones
   const filteredVoices = voices.filter(v => !v.name.toLowerCase().includes('hidden'));
 
-  // --- Auto-scroll to selected voice ---
   const voiceListRef = useRef<HTMLDivElement>(null);
   const selectedVoiceRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -384,246 +364,223 @@ export default function SpeechToSpeech() {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8 bg-background">
-      <div className="container mx-auto p-4 max-w-2xl">
-        <Card className="w-full">
-          <CardContent className="py-8 space-y-6">
-            <NavTabs activeTab="speech-to-speech" apiKey={apiKey} />
-            <h1 className="text-2xl font-bold text-center">{t('speech_to_speech.title')}</h1>
-            <div className="space-y-4">
-              {!voicesLoaded || isLoading ? (
-                <div className="text-center text-muted-foreground">{t('common.loading_voices')}</div>
-              ) : (
-                <>
-                  {/* Voice selection */}
-                  <div>
-                    <Label htmlFor="voice">{t('common.select_voice')}</Label>
-                    <div
-                      ref={voiceListRef}
-                      className="flex flex-col gap-0.5 py-1 max-h-72 overflow-y-auto border rounded-md bg-background"
-                    >
-                      {filteredVoices.map(voice => (
-                        <div
-                          key={voice.voice_id}
-                          ref={selectedVoice === voice.voice_id ? selectedVoiceRef : undefined}
-                          className={`w-full px-2 py-0.5 rounded-lg border cursor-pointer transition-colors flex flex-col group ${
-                            selectedVoice === voice.voice_id ? 'border-primary bg-muted' : 'border-border bg-background'
-                          }`}
-                          onClick={() => setSelectedVoice(voice.voice_id)}
-                          tabIndex={0}
-                          role="button"
-                          aria-pressed={selectedVoice === voice.voice_id}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-base flex-1 mr-2">{voice.name}</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={e => {
-                                e.stopPropagation();
-                                handlePreviewVoice(voice);
-                              }}
-                              disabled={!!previewingVoice || !voice.preview_url}
-                              className="ml-1"
-                            >
-                              {!voice.preview_url ? (
-                                <span className="text-xs">N/A</span>
-                              ) : previewingVoice === voice.voice_id ? (
-                                <Loader2 className="animate-spin w-4 h-4" />
-                              ) : (
-                                <Play className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate max-w-full leading-none">{voice.category}</div>
-                          {voice.description && (
-                            <div className="text-xs text-muted-foreground truncate max-w-full leading-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                              {voice.description}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Audio input toggle */}
-                  <div>
-                    <Label>{t('speech_to_speech.audio_input')}</Label>
-                    <div className="flex gap-2 mb-2">
-                      <Button
-                        type="button"
-                        variant={inputMode === 'upload' ? 'default' : 'outline'}
-                        onClick={() => {
-                          setInputMode('upload');
-                          clearAudioFile();
-                        }}
+      <Card className="w-full max-w-2xl">
+        <CardContent className="py-8">
+          <NavTabs activeTab="speech-to-speech" apiKey={apiKey} />
+          <h1 className="text-2xl font-bold mb-6 text-center">{t('speech_to_speech.title')}</h1>
+          <div className="space-y-4">
+            {!voicesLoaded || isLoading ? (
+              <div className="text-center text-muted-foreground">{t('common.loading_voices')}</div>
+            ) : (
+              <>
+                <div>
+                  <Label htmlFor="voice">{t('common.select_voice')}</Label>
+                  <div
+                    ref={voiceListRef}
+                    className="flex flex-col gap-0.5 py-1 max-h-72 overflow-y-auto border rounded-md bg-background"
+                  >
+                    {filteredVoices.map(voice => (
+                      <div
+                        key={voice.voice_id}
+                        ref={selectedVoice === voice.voice_id ? selectedVoiceRef : undefined}
+                        className={`w-full px-2 py-0.5 rounded-lg border cursor-pointer transition-colors flex flex-col group ${
+                          selectedVoice === voice.voice_id ? 'border-primary bg-muted' : 'border-border bg-background'
+                        }`}
+                        onClick={() => setSelectedVoice(voice.voice_id)}
+                        tabIndex={0}
+                        role="button"
+                        aria-pressed={selectedVoice === voice.voice_id}
                       >
-                        {t('common.upload')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={inputMode === 'record' ? 'default' : 'outline'}
-                        onClick={() => {
-                          setInputMode('record');
-                          clearAudioFile();
-                        }}
-                      >
-                        {t('common.record')}
-                      </Button>
-                    </div>
-                    {inputMode === 'upload' ? (
-                      <div className="space-y-2">
-                        <div className="flex gap-2">
-                          <div className="flex-1">
-                            {audioFile ? (
-                              <div className="flex items-center gap-2 border rounded-md p-2 bg-muted/10">
-                                <div className="flex-1 text-sm truncate">{audioFile.name}</div>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                  ({(audioFile.size / (1024 * 1024)).toFixed(2)} MB)
-                                </span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => fileInputRef.current?.click()}
-                                  disabled={isGenerating}
-                                  className="ml-2"
-                                >
-                                  <Upload className="h-4 w-4" />
-                                </Button>
-                              </div>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-base flex-1 mr-2">{voice.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={e => {
+                              e.stopPropagation();
+                              handlePreviewVoice(voice);
+                            }}
+                            disabled={!!previewingVoice || !voice.preview_url}
+                            className="ml-1"
+                          >
+                            {!voice.preview_url ? (
+                              <span className="text-xs">N/A</span>
+                            ) : previewingVoice === voice.voice_id ? (
+                              <Loader2 className="animate-spin w-4 h-4" />
                             ) : (
-                              <Button
-                                variant="outline"
-                                onClick={() => fileInputRef.current?.click()}
-                                disabled={isGenerating}
-                                className="w-full"
-                              >
-                                <Play className="mr-2 h-4 w-4" />
-                                {t('common.upload_audio_file')}
-                              </Button>
+                              <Play className="w-4 h-4" />
                             )}
-                            <input
-                              ref={fileInputRef}
-                              id="audioFile"
-                              type="file"
-                              accept="audio/*"
-                              onChange={handleFileChange}
-                              disabled={isGenerating}
-                              className="hidden"
-                            />
-                          </div>
-                          {audioFile && (
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={clearAudioFile}
-                              disabled={isGenerating}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
+                          </Button>
                         </div>
-                        {lastAudioUrl && audioFile && (
-                          <div className="border rounded-md p-4 bg-muted/10">
-                            <h2 className="text-sm font-medium flex items-center gap-2 mb-2">
-                              <Play className="text-primary h-4 w-4" /> {t('common.original_audio')}
-                            </h2>
-                            <audio
-                              controls
-                              className="w-full mb-2"
-                              src={lastAudioUrl}
-                            />
+                        <div className="text-xs text-muted-foreground truncate max-w-full leading-none">{voice.category}</div>
+                        {voice.description && (
+                          <div className="text-xs text-muted-foreground truncate max-w-full leading-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            {voice.description}
                           </div>
                         )}
                       </div>
-                    ) : (
-                      <AudioRecorder onAudioReady={file => {
-                        setAudioFile(file);
-                        setConvertedAudio(null);
-                      }} initialAudioUrl={lastAudioUrl} />
-                    )}
+                    ))}
                   </div>
+                </div>
 
-                  {/* Settings */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                    <div className="space-y-4">
-                      <div className="flex justify-between">
-                        <Label>{t('speech_to_speech.stability')}</Label>
-                        <span className="text-sm text-muted-foreground">{Math.round(stability * 100)}%</span>
-                      </div>
-                      <Slider
-                        value={[stability * 100]}
-                        min={0}
-                        max={100}
-                        step={1}
-                        onValueChange={(vals) => setStability(vals[0] / 100)}
-                      />
-                    </div>
-                    <div className="space-y-4">
-                      <div className="flex justify-between">
-                        <Label>{t('speech_to_speech.similarity_boost')}</Label>
-                        <span className="text-sm text-muted-foreground">{Math.round(similarityBoost * 100)}%</span>
-                      </div>
-                      <Slider
-                        value={[similarityBoost * 100]}
-                        min={0}
-                        max={100}
-                        step={1}
-                        onValueChange={(vals) => setSimilarityBoost(vals[0] / 100)}
-                      />
-                    </div>
+                <div>
+                  <Label>{t('speech_to_speech.audio_input')}</Label>
+                  <div className="flex gap-2 mb-2">
+                    <Button
+                      type="button"
+                      variant={inputMode === 'upload' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setInputMode('upload');
+                        clearAudioFile();
+                      }}
+                    >
+                      {t('common.upload')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={inputMode === 'record' ? 'default' : 'outline'}
+                      onClick={() => {
+                        setInputMode('record');
+                        clearAudioFile();
+                      }}
+                    >
+                      {t('common.record')}
+                    </Button>
                   </div>
-
-                  {/* Cost preview */}
-                  {estimatedCost !== null && (
-                    <div className="text-sm text-muted-foreground mt-4">
-                      {t('common.cost')}: <span className="font-medium">{estimatedCost} {t('common.credits')}</span>
+                  {inputMode === 'upload' ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          {audioFile ? (
+                            <div className="flex items-center gap-2 border rounded-md p-2 bg-muted/10">
+                              <div className="flex-1 text-sm truncate">{audioFile.name}</div>
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                ({(audioFile.size / (1024 * 1024)).toFixed(2)} MB)
+                              </span>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isGenerating}
+                                className="ml-2"
+                              >
+                                <Upload className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              onClick={() => fileInputRef.current?.click()}
+                              disabled={isGenerating}
+                              className="w-full"
+                            >
+                              <Play className="mr-2 h-4 w-4" />
+                              {t('common.upload_audio_file')}
+                            </Button>
+                          )}
+                          <input
+                            ref={fileInputRef}
+                            id="audioFile"
+                            type="file"
+                            accept="audio/*"
+                            onChange={handleFileChange}
+                            disabled={isGenerating}
+                            className="hidden"
+                          />
+                        </div>
+                        {audioFile && (
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={clearAudioFile}
+                            disabled={isGenerating}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      {lastAudioUrl && audioFile && (
+                        <div className="border rounded-md p-4 bg-muted/10">
+                          <h2 className="text-sm font-medium flex items-center gap-2 mb-2">
+                            <Play className="text-primary h-4 w-4" /> {t('common.original_audio')}
+                          </h2>
+                          <audio 
+                            controls 
+                            className="w-full mb-2" 
+                            src={lastAudioUrl}
+                          />
+                        </div>
+                      )}
                     </div>
+                  ) : (
+                    <AudioRecorder onAudioReady={file => {
+                      setAudioFile(file);
+                      setConvertedAudio(null);
+                    }} initialAudioUrl={lastAudioUrl} />
                   )}
+                </div>
 
-                  {/* Convert button */}
-                  <Button
-                    className="w-full mt-6"
-                    size="lg"
-                    disabled={isGenerating || !audioFile || !selectedVoice}
-                    onClick={handleConvert}
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('common.generating')}
-                      </>
-                    ) : (
-                      t('speech_to_speech.convert')
-                    )}
-                  </Button>
+                <div>
+                  <Label>{t('speech_to_speech.stability')} ({stability})</Label>
+                  <Slider
+                    value={[stability]}
+                    onValueChange={([value]) => setStability(value)}
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    disabled={isGenerating}
+                  />
+                </div>
 
-                  {/* Result */}
-                  {convertedAudio && (
-                    <div className="mt-8 border-t pt-8 space-y-4">
-                      <h2 className="text-lg font-semibold">{t('speech_to_speech.current_generation')}</h2>
-                      <div className="bg-muted/10 border rounded-lg p-6">
-                        <audio
-                          controls
-                          src={`data:audio/mp3;base64,${convertedAudio}`}
-                          className="w-full mb-4"
-                        />
-                        <Button className="w-full" onClick={handleDownload}>
-                          <Download className="mr-2 h-4 w-4" />
-                          {t('common.download')}
+                <div>
+                  <Label>{t('speech_to_speech.similarity_boost')} ({similarityBoost})</Label>
+                  <Slider
+                    value={[similarityBoost]}
+                    onValueChange={([value]) => setSimilarityBoost(value)}
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    disabled={isGenerating}
+                  />
+                </div>
+                
+                {estimatedCost !== null && audioFile && (
+                  <div className="mt-2">
+                    <div className="text-sm text-muted-foreground">
+                      {t('common.cost')} <span className="font-medium">{estimatedCost} {t('common.credits')}</span>
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleConvert}
+                  disabled={isGenerating || !apiKey || !selectedVoice || !audioFile}
+                  className="w-full"
+                >
+                  {isGenerating ? t('common.converting') : t('speech_to_speech.convert')}
+                </Button>
+
+                {convertedAudio && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">{t('common.converted_audio')}</h3>
+                        <audio controls src={`data:audio/mp3;base64,${convertedAudio}`} className="w-full" />
+                        <Button onClick={handleDownload} className="w-full">
+                          {t('speech_to_speech.download_converted')}
                         </Button>
                       </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Generation History */}
-        <div className="mt-8">
-          <GenerationHistoryPanel />
-        </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="w-full max-w-2xl mt-8">
+        <GenerationHistoryPanel />
       </div>
     </div>
   );

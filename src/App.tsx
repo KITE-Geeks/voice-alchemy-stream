@@ -13,6 +13,7 @@ import TextToSpeech from './pages/text-to-speech';
 import SoundFX from './pages/sound-fx';
 import VoiceIsolator from './pages/voice-isolator';
 import SpeechToSpeech from './pages/speech-to-speech';
+import Music from './pages/music';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { LanguageToggle } from './components/LanguageToggle';
 import { GenerationHistoryProvider } from './contexts/GenerationHistoryContext';
@@ -57,6 +58,7 @@ const App = () => (
                 <Route path="/speech-to-speech" element={<SpeechToSpeech />} />
                 <Route path="/sound-fx" element={<SoundFX />} />
                 <Route path="/voice-isolator" element={<VoiceIsolator />} />
+                <Route path="/music" element={<Music />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

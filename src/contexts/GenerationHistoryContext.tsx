@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-export type GenerationType = 'text-to-speech' | 'speech-to-speech' | 'sound-fx' | 'voice-isolator';
+export type GenerationType = 'text-to-speech' | 'speech-to-speech' | 'sound-fx' | 'voice-isolator' | 'music';
 
 export interface GenerationHistoryItem {
   id: string;

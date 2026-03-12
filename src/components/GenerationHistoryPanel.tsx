@@ -17,6 +17,8 @@ const getTypeLabel = (type: GenerationType): string => {
       return 'Sound FX';
     case 'voice-isolator':
       return 'Voice Isolator';
+    case 'music':
+      return 'Generative Music';
     default:
       return type;
   }

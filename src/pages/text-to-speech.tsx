@@ -99,6 +99,7 @@ export default function TextToSpeech() {
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
   const [stability, setStability] = useState(0.5);
   const [similarityBoost, setSimilarityBoost] = useState(0.8);
+  const [speed, setSpeed] = useState(1.0);
   const [useV3, setUseV3] = useState(false);
   const [vocalDelivery, setVocalDelivery] = useState('');
   const [soundEffect, setSoundEffect] = useState('none');
@@ -238,10 +239,30 @@ export default function TextToSpeech() {
   const estimatedCost = inputText ? calculateTextToSpeechCost(inputText) : 0;
 
   const handleGenerate = async () => {
-    if (!apiKey || !selectedVoice || !inputText.trim()) {
-      toast.error('Please fill in all required fields');
+    if (!inputText.trim()) {
+      toast.warning('Please enter text to convert to speech');
       return;
     }
+
+    if (!selectedVoice) {
+      toast.error('Please select a voice before generating');
+      return;
+    }
+
+    if (!apiKey) {
+      toast.error('API key is missing. Please go back to the home page and enter your API key.');
+      return;
+    }
+
+    console.log('=== DEBUG TEXT-TO-SPEECH ===');
+    console.log('API Key:', apiKey ? `${apiKey.substring(0, 10)}...` : 'MISSING');
+    console.log('Selected Voice:', selectedVoice);
+    console.log('Voice ID:', selectedVoice);
+    console.log('Input Text length:', inputText.length);
+    console.log('Speed:', speed);
+    console.log('Stability:', stability);
+    console.log('Similarity Boost:', similarityBoost);
+    console.log('Use V3:', useV3);
 
     try {
       setIsGenerating(true);
@@ -253,6 +274,7 @@ export default function TextToSpeech() {
         selectedVoice,
         stability,
         similarityBoost,
+        speed,
         useV3,
         undefined, // emotion parameter removed
         useV3 && soundEffect !== 'none' ? soundEffect : undefined
@@ -321,300 +343,339 @@ export default function TextToSpeech() {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8 bg-background">
-      <Card className="w-full max-w-2xl mb-8">
-        <CardContent className="py-8">
-          <NavTabs />
-          <h2 className="text-2xl font-bold mb-6 text-center">
-            {t('text_to_speech.title')}
-          </h2>
-          
-          <div className="space-y-6">
-            {isLoading ? (
-              <div className="text-center text-muted-foreground py-4">
-                {t('common.loading_voices')}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* V3 Model Toggle */}
-                <div className="flex items-center space-x-2 mb-4">
-                  <Switch 
-                    id="v3-toggle"
-                    checked={useV3} 
-                    onCheckedChange={(checked) => {
-                      setUseV3(checked);
-                      saveToStorage(TTS_USE_V3_KEY, checked.toString());
-                      if (!checked) {
-                        setVocalDelivery('');
-                        setSoundEffect('none');
-                      }
-                    }}
-                  />
-                  <Label htmlFor="v3-toggle">{t('text_to_speech.use_v3_model')}</Label>
+      <div className="container mx-auto p-4 max-w-2xl">
+        <Card className="w-full">
+          <CardContent className="py-8 space-y-6">
+            <NavTabs />
+            <h2 className="text-2xl font-bold text-center">
+              {t('text_to_speech.title')}
+            </h2>
+            
+            <div className="space-y-6">
+              {isLoading ? (
+                <div className="text-center text-muted-foreground py-4">
+                  {t('common.loading_voices')}
                 </div>
-
-                {/* Voice Selection */}
-                <div className="space-y-2">
-                  <Label htmlFor="voice-select">Select Voice</Label>
-                  <div
-                    ref={voiceListRef}
-                    className="flex flex-col gap-0.5 py-1 max-h-72 overflow-y-auto border rounded-md bg-background"
-                  >
-                  {filteredVoices.map((voice) => (
-                    <div
-                      key={voice.voice_id}
-                      ref={selectedVoice === voice.voice_id ? selectedVoiceRef : undefined}
-                      className={`w-full px-2 py-0.5 rounded-lg border cursor-pointer transition-colors flex flex-col group ${
-                        selectedVoice === voice.voice_id 
-                          ? 'border-primary bg-muted' 
-                          : 'border-border bg-background hover:bg-accent/50'
-                      }`}
-                      onClick={() => {
-                        setSelectedVoice(voice.voice_id);
-                        saveTTSVoiceToStorage(voice.voice_id);
+              ) : (
+                <div className="space-y-4">
+                  {/* V3 Model Toggle */}
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Switch 
+                      id="v3-toggle"
+                      checked={useV3} 
+                      onCheckedChange={(checked) => {
+                        setUseV3(checked);
+                        saveToStorage(TTS_USE_V3_KEY, checked.toString());
+                        if (!checked) {
+                          setVocalDelivery('');
+                          setSoundEffect('none');
+                        }
                       }}
-                      tabIndex={0}
-                      role="button"
-                      aria-pressed={selectedVoice === voice.voice_id}
+                    />
+                    <Label htmlFor="v3-toggle">{t('text_to_speech.use_v3_model')}</Label>
+                  </div>
+
+                  {/* Voice Selection */}
+                  <div className="space-y-2">
+                    <Label htmlFor="voice-select">Select Voice</Label>
+                    <div
+                      ref={voiceListRef}
+                      className="flex flex-col gap-0.5 py-1 max-h-72 overflow-y-auto border rounded-md bg-background"
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-base flex-1 mr-2">
-                          {voice.name}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await handlePreviewVoice(voice);
+                      {filteredVoices.map((voice) => (
+                        <div
+                          key={voice.voice_id}
+                          ref={selectedVoice === voice.voice_id ? selectedVoiceRef : undefined}
+                          className={`w-full px-2 py-0.5 rounded-lg border cursor-pointer transition-colors flex flex-col group ${
+                            selectedVoice === voice.voice_id 
+                              ? 'border-primary bg-muted' 
+                              : 'border-border bg-background hover:bg-accent/50'
+                          }`}
+                          onClick={() => {
+                            setSelectedVoice(voice.voice_id);
+                            saveTTSVoiceToStorage(voice.voice_id);
                           }}
-                          disabled={!!previewingVoice || !voice.preview_url}
-                          className="ml-1"
+                          tabIndex={0}
+                          role="button"
+                          aria-pressed={selectedVoice === voice.voice_id}
                         >
-                          {!voice.preview_url ? (
-                            <span className="text-xs">N/A</span>
-                          ) : previewingVoice === voice.voice_id ? (
-                            <Loader2 className="animate-spin w-4 h-4" />
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-base flex-1 mr-2">
+                              {voice.name}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handlePreviewVoice(voice);
+                              }}
+                              disabled={!!previewingVoice || !voice.preview_url}
+                              className="ml-1"
+                            >
+                              {!voice.preview_url ? (
+                                <span className="text-xs">N/A</span>
+                              ) : previewingVoice === voice.voice_id ? (
+                                <Loader2 className="animate-spin w-4 h-4" />
+                              ) : (
+                                <Play className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate max-w-full leading-none">
+                            {voice.category}
+                          </div>
+                          {voice.description && (
+                            <div className="text-xs text-muted-foreground truncate max-w-full leading-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              {voice.description}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-2">
+                      <Label htmlFor="text">{t('text_to_speech.enter_text')}</Label>
+                    </div>
+                    <Textarea
+                      id="text"
+                      ref={textAreaRef}
+                      placeholder={t('text_to_speech.text_placeholder')}
+                      value={inputText}
+                      onChange={(e) => {
+                        setInputText(e.target.value);
+                        saveTextToStorage(e.target.value);
+                      }}
+                      className="min-h-[120px]"
+                    />
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {t('common.cost')} <span className="font-medium">{Math.round(estimatedCost)} {t('common.credits')}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Advanced Settings for non-v3 mode */}
+                  {!useV3 && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">{t('text_to_speech.advanced_settings')}</h3>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="stability-standard">{t('text_to_speech.stability')}</Label>
+                            <span className="text-sm text-muted-foreground">{stability.toFixed(1)}</span>
+                          </div>
+                          <Slider
+                            id="stability-standard"
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            value={[stability]}
+                            onValueChange={(value) => setStability(value[0])}
+                            className="w-full"
+                          />
+                          <p className="text-sm text-muted-foreground">
+                            {t('text_to_speech.stability_description')}
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="similarity-boost-standard">{t('text_to_speech.similarity_boost')}</Label>
+                            <span className="text-sm text-muted-foreground">{similarityBoost.toFixed(1)}</span>
+                          </div>
+                          <Slider
+                            id="similarity-boost-standard"
+                            min={0}
+                            max={1}
+                            step={0.01}
+                            value={[similarityBoost]}
+                            onValueChange={(value) => setSimilarityBoost(value[0])}
+                            className="w-full"
+                          />
+                          <p className="text-sm text-muted-foreground">
+                            {t('text_to_speech.similarity_boost_description')}
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="speed-standard">{t('text_to_speech.speed')}</Label>
+                            <span className="text-sm text-muted-foreground">{speed.toFixed(1)}</span>
+                          </div>
+                          <Slider
+                            id="speed-standard"
+                            min={0.7}
+                            max={1.2}
+                            step={0.1}
+                            value={[speed]}
+                            onValueChange={(value) => setSpeed(value[0])}
+                            className="w-full"
+                          />
+                          <p className="text-sm text-muted-foreground">
+                            {t('text_to_speech.speed_description')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Generate Button - Only show if not in v3 mode */}
+                  {!useV3 && (
+                    <div className="mt-4">
+                      <Button 
+                        onClick={handleGenerate} 
+                        disabled={isGenerating || !inputText.trim() || !selectedVoice}
+                        className="w-full"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {t('common.generating')}
+                          </>
+                        ) : (
+                          <>{t('text_to_speech.generate_audio')}</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
+
+                  {useV3 && (
+                    <div className="mt-4 p-4 bg-muted/20 rounded-lg border border-muted">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>{t('text_to_speech.vocal_delivery')}</Label>
+                          <p className="text-xs text-muted-foreground mb-1">{t('text_to_speech.vocal_delivery_description')}</p>
+                          <Select 
+                            value={vocalDelivery}
+                            onValueChange={handleVocalDeliveryChange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('text_to_speech.select_vocal_expression')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {VOCAL_DELIVERY.map((item) => (
+                                <SelectItem key={item.value} value={item.value}>
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>{t('text_to_speech.audio_effect')}</Label>
+                          <p className="text-xs text-muted-foreground mb-1">{t('text_to_speech.audio_effect_description')}</p>
+                          <Select 
+                            value={soundEffect}
+                            onValueChange={handleSoundEffectChange}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('text_to_speech.select_audio_effect')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SOUND_EFFECTS.map((effect) => (
+                                <SelectItem key={effect.value} value={effect.value}>
+                                  {effect.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {t('text_to_speech.example_tags_description')}
+                      </p>
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">{t('text_to_speech.advanced_settings')}</h3>
+                        
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="stability">{t('text_to_speech.stability')}</Label>
+                              <span className="text-sm text-muted-foreground">{stability.toFixed(1)}</span>
+                            </div>
+                            <Slider
+                              id="stability"
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              value={[stability]}
+                              onValueChange={(value) => setStability(value[0])}
+                              className="w-full"
+                            />
+                            <p className="text-sm text-muted-foreground">
+                              {t('text_to_speech.stability_description')}
+                            </p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label htmlFor="similarity-boost">{t('text_to_speech.similarity_boost')}</Label>
+                              <span className="text-sm text-muted-foreground">{similarityBoost.toFixed(1)}</span>
+                            </div>
+                            <Slider
+                              id="similarity-boost"
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              value={[similarityBoost]}
+                              onValueChange={(value) => setSimilarityBoost(value[0])}
+                              className="w-full"
+                            />
+                            <p className="text-sm text-muted-foreground">
+                              {t('text_to_speech.similarity_boost_description')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-4">
+                        <Button 
+                          onClick={handleGenerate} 
+                          disabled={isGenerating || !inputText.trim() || !selectedVoice}
+                          className="w-full"
+                        >
+                          {isGenerating ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              {t('common.generating')}
+                            </>
                           ) : (
-                            <Play className="w-4 h-4" />
+                            <>{t('text_to_speech.generate_audio')}</>
                           )}
                         </Button>
                       </div>
-                      <div className="text-xs text-muted-foreground truncate max-w-full leading-none">
-                        {voice.category}
-                      </div>
-                      {voice.description && (
-                        <div className="text-xs text-muted-foreground truncate max-w-full leading-none opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          {voice.description}
-                        </div>
-                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <div className="mb-2">
-                  <Label htmlFor="text">{t('text_to_speech.enter_text')}</Label>
-                </div>
-                <Textarea
-                  id="text"
-                  ref={textAreaRef}
-                  placeholder={t('text_to_speech.text_placeholder')}
-                  value={inputText}
-                  onChange={(e) => {
-                    setInputText(e.target.value);
-                    saveTextToStorage(e.target.value);
-                  }}
-                  className="min-h-[120px]"
-                />
-                <div className="text-sm text-muted-foreground mt-1">
-                  {t('common.cost')} <span className="font-medium">{Math.round(estimatedCost)} {t('common.credits')}</span>
-                </div>
-              </div>
-              
-              {/* Advanced Settings for non-v3 mode */}
-              {!useV3 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">{t('text_to_speech.advanced_settings')}</h3>
-                  
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="stability-standard">{t('text_to_speech.stability')}</Label>
-                        <span className="text-sm text-muted-foreground">{stability.toFixed(1)}</span>
-                      </div>
-                      <Slider
-                        id="stability-standard"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={[stability]}
-                        onValueChange={(value) => setStability(value[0])}
-                        className="w-full"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        {t('text_to_speech.stability_description')}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="similarity-boost-standard">{t('text_to_speech.similarity_boost')}</Label>
-                        <span className="text-sm text-muted-foreground">{similarityBoost.toFixed(1)}</span>
-                      </div>
-                      <Slider
-                        id="similarity-boost-standard"
-                        min={0}
-                        max={1}
-                        step={0.01}
-                        value={[similarityBoost]}
-                        onValueChange={(value) => setSimilarityBoost(value[0])}
-                        className="w-full"
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        {t('text_to_speech.similarity_boost_description')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Generate Button - Only show if not in v3 mode */}
-              {!useV3 && (
-                <div className="mt-4">
-                  <Button 
-                    onClick={handleGenerate} 
-                    disabled={isGenerating || !inputText.trim() || !selectedVoice}
-                    className="w-full"
-                  >
-                    {isGenerating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('common.generating')}
-                      </>
-                    ) : (
-                      <>{t('text_to_speech.generate_audio')}</>
-                    )}
-                  </Button>
+                  )}
                 </div>
               )}
 
-              {useV3 && (
-                <div className="mt-4 p-4 bg-muted/20 rounded-lg border border-muted">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label>{t('text_to_speech.vocal_delivery')}</Label>
-                      <p className="text-xs text-muted-foreground mb-1">{t('text_to_speech.vocal_delivery_description')}</p>
-                      <Select 
-                        value={vocalDelivery}
-                        onValueChange={handleVocalDeliveryChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('text_to_speech.select_vocal_expression')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {VOCAL_DELIVERY.map((item) => (
-                            <SelectItem key={item.value} value={item.value}>
-                              {item.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>{t('text_to_speech.audio_effect')}</Label>
-                      <p className="text-xs text-muted-foreground mb-1">{t('text_to_speech.audio_effect_description')}</p>
-                      <Select 
-                        value={soundEffect}
-                        onValueChange={handleSoundEffectChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('text_to_speech.select_audio_effect')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SOUND_EFFECTS.map((effect) => (
-                            <SelectItem key={effect.value} value={effect.value}>
-                              {effect.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {t('text_to_speech.example_tags_description')}
-                  </p>
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">{t('text_to_speech.advanced_settings')}</h3>
-                    
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="stability">{t('text_to_speech.stability')}</Label>
-                          <span className="text-sm text-muted-foreground">{stability.toFixed(1)}</span>
-                        </div>
-                        <Slider
-                          id="stability"
-                          min={0}
-                          max={1}
-                          step={0.01}
-                          value={[stability]}
-                          onValueChange={(value) => setStability(value[0])}
-                          className="w-full"
-                        />
-                        <p className="text-sm text-muted-foreground">
-                          {t('text_to_speech.stability_description')}
-                        </p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="similarity-boost">{t('text_to_speech.similarity_boost')}</Label>
-                          <span className="text-sm text-muted-foreground">{similarityBoost.toFixed(1)}</span>
-                        </div>
-                        <Slider
-                          id="similarity-boost"
-                          min={0}
-                          max={1}
-                          step={0.01}
-                          value={[similarityBoost]}
-                          onValueChange={(value) => setSimilarityBoost(value[0])}
-                          className="w-full"
-                        />
-                        <p className="text-sm text-muted-foreground">
-                          {t('text_to_speech.similarity_boost_description')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <Button 
-                      onClick={handleGenerate} 
-                      disabled={isGenerating || !inputText.trim() || !selectedVoice}
-                      className="w-full"
-                    >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          {t('common.generating')}
-                        </>
-                      ) : (
-                        <>{t('text_to_speech.generate_audio')}</>
-                      )}
+              {/* Current Generation Result */}
+              {generatedAudio && (
+                <div className="mt-8 border-t pt-8 space-y-4">
+                  <h2 className="text-xl font-semibold">{t('text_to_speech.current_generation')}</h2>
+                  <div className="bg-muted/10 border rounded-lg p-6">
+                    <audio
+                      controls
+                      src={generatedAudio}
+                      className="w-full mb-4"
+                    />
+                    <Button className="w-full" onClick={handleDownload}>
+                      <Download className="mr-2 h-4 w-4" />
+                      {t('common.download')}
                     </Button>
                   </div>
                 </div>
               )}
             </div>
-          )}
+          </CardContent>
+        </Card>
+        
+        {/* Generation History */}
+        <div className="w-full max-w-2xl mt-8 border-t pt-8">
+          <GenerationHistoryPanel />
         </div>
-      </CardContent>
-    </Card>
-    
-    {/* Generation History */}
-    <div className="w-full max-w-2xl">
-      <GenerationHistoryPanel />
+      </div>
     </div>
-  </div>
   );
 }

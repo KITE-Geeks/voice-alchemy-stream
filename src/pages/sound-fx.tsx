@@ -102,9 +102,11 @@ export default function SoundFX() {
       console.log('Sending request to ElevenLabs API...');
       const params = {
         text,
-        model_id: 'eleven_creative_studio_sound_effects',
+        model_id: 'eleven_text_to_sound_v2',
         output_format: 'mp3_44100_128',
         num_variations: settings.variationCount,
+        duration_seconds: settings.duration > 0 ? settings.duration : undefined,
+        prompt_influence: settings.promptAdherence / 100,
       };
       console.log('Request params:', params);
       
@@ -162,9 +164,8 @@ export default function SoundFX() {
       setCurrentSounds(newSounds);
       console.log('Sound effect generated successfully');
 
-      // Add to history and auto-play the first generated sound if available
+      // Add to history
       if (newSounds.length > 0) {
-        // Add to history
         try {
           newSounds.forEach(sound => {
             addToHistory({
@@ -176,15 +177,6 @@ export default function SoundFX() {
           });
         } catch (error) {
           console.error('Failed to add to history:', error);
-        }
-
-        // Auto-play the first sound
-        try {
-          const audio = new Audio(`data:audio/mp3;base64,${newSounds[0].audio}`);
-          await audio.play();
-        } catch (playError) {
-          console.warn('Could not auto-play sound:', playError);
-          // Not a critical error, so we don't show a toast
         }
       }
     } catch (err) {
@@ -302,11 +294,12 @@ export default function SoundFX() {
   const estimatedCost = elevenlabsApi.calculateSoundFXCost(text || 'Example text', settings.duration, settings.variationCount);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-      <Card className="w-full max-w-2xl">
-        <CardContent className="py-8">
-          <NavTabs />
-          <h2 className="text-2xl font-bold mb-4 text-center">{t('sound_fx.title')}</h2>
+    <div className="min-h-screen flex flex-col items-center py-8 bg-background">
+      <div className="container mx-auto p-4 max-w-2xl">
+        <Card className="w-full">
+          <CardContent className="py-8 space-y-6">
+            <NavTabs activeTab="sound-fx" apiKey={apiKey} />
+            <h2 className="text-2xl font-bold text-center">{t('sound_fx.title')}</h2>
           
           <div className="space-y-6">
             {/* Prompt Input */}
@@ -441,14 +434,15 @@ export default function SoundFX() {
                 </div>
               )}
             </div>
-
-            {/* Generation History */}
-            <div className="mt-8">
-              <GenerationHistoryPanel />
-            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Generation History */}
+      <div className="mt-8">
+        <GenerationHistoryPanel />
+        </div>
+      </div>
     </div>
   );
 }

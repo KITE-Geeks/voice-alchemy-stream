@@ -7,6 +7,7 @@ const tabKeys = [
   { key: 'speech-to-speech', translationKey: 'nav.speech_to_speech', path: '/speech-to-speech' },
   { key: 'sound-fx', translationKey: 'nav.sound_fx', path: '/sound-fx' },
   { key: 'voice-isolator', translationKey: 'nav.voice_isolator', path: '/voice-isolator' },
+  { key: 'music', translationKey: 'nav.music', path: '/music' },
 ];
 
 interface NavTabsProps {
@@ -29,12 +30,12 @@ export function NavTabs({ activeTab, apiKey: propApiKey }: NavTabsProps) {
   };
 
   return (
-    <div className="flex gap-2 mb-6 justify-center">
+    <div className="flex flex-wrap gap-2 mb-6 justify-center">
       {tabKeys.map(tab => (
         <Button
           key={tab.key}
           variant={(activeTab === tab.key || (!activeTab && currentPath === tab.path)) ? 'default' : 'outline'}
-          className="rounded-full px-4 py-1 text-sm"
+          className="rounded-full px-3 py-1 text-xs sm:text-sm h-8 sm:h-9"
           onClick={() => handleTabClick(tab)}
         >
           {t(tab.translationKey)}
@@ -42,4 +43,4 @@ export function NavTabs({ activeTab, apiKey: propApiKey }: NavTabsProps) {
       ))}
     </div>
   );
-} 
+}

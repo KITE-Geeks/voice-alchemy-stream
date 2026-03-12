@@ -41,8 +41,20 @@ const translations = {
     'nav.speech_to_speech': 'Speech-to-Speech',
     'nav.sound_fx': 'Sound FX',
     'nav.voice_isolator': 'Voice Isolator',
+    'nav.music': 'Music',
     
-    // Abbreviations
+    // Music
+    'music.title': 'Music',
+    'music.prompt_label': 'Describe the music you want to generate',
+    'music.prompt_placeholder': 'e.g., A cinematic orchestral piece with soaring violins and epic percussion...',
+    'music.duration': 'Duration',
+    'music.generate': 'Generate Music',
+    'music.generating': 'Generating...',
+    'music.success': 'Music generated successfully!',
+    'music.lyrics_label': 'Lyrics (Optional)',
+    'music.lyrics_placeholder': 'Enter your lyrics here...',
+    'music.instrumental': 'Instrumental',
+    'music.auto': 'Auto',
     'common.eg': 'e.g.',
 
     // Voice Isolator
@@ -67,7 +79,10 @@ const translations = {
     'text_to_speech.stability_description': 'Higher values will make the voice more stable and consistent, but may lose some expressiveness.',
     'text_to_speech.similarity_boost': 'Similarity Boost',
     'text_to_speech.similarity_boost_description': 'Enhances the similarity to the original voice. Higher values make the generated voice more similar to the selected voice.',
+    'text_to_speech.speed': 'Speed',
+    'text_to_speech.speed_description': 'Controls the speaking speed. Higher values make the speech faster.',
     'text_to_speech.generate_audio': 'Generate Audio',
+    'text_to_speech.current_generation': 'Current Generation',
     'text_to_speech.download_generated': 'Download Generated Audio',
     'text_to_speech.vocal_delivery': 'Vocal Delivery',
     'text_to_speech.audio_effect': 'Audio Effect',
@@ -127,6 +142,7 @@ const translations = {
     'speech_to_speech.audio_input': 'Audio Input',
     'speech_to_speech.stability': 'Stability',
     'speech_to_speech.similarity_boost': 'Similarity Boost',
+    'speech_to_speech.current_generation': 'Current Generation',
     'speech_to_speech.convert': 'Convert',
     'speech_to_speech.download_converted': 'Download Converted Audio',
     'speech_to_speech.cost': 'Cost: {0} credits',
@@ -173,14 +189,27 @@ const translations = {
     'common.loading_voices': 'Stimmen werden geladen...',
     'common.start_recording': 'Aufnahme starten',
     'common.stop_recording': 'Aufnahme stoppen',
+    'common.result': 'Ergebnis',
 
     // Navigation Tabs
     'nav.text_to_speech': 'Text-zu-Sprache',
     'nav.speech_to_speech': 'Sprache-zu-Sprache',
     'nav.sound_fx': 'Soundeffekte',
     'nav.voice_isolator': 'Stimmen-Isolator',
+    'nav.music': 'Musik',
     
-    // Abbreviations
+    // Music
+    'music.title': 'Musik',
+    'music.prompt_label': 'Beschreibe die Musik, die du generieren möchtest',
+    'music.prompt_placeholder': 'z.B. Ein kinoreifes Orchesterstück mit schwebenden Violinen und epischem Schlagzeug...',
+    'music.duration': 'Dauer',
+    'music.generate': 'Musik generieren',
+    'music.generating': 'Wird generiert...',
+    'music.success': 'Musik erfolgreich generiert!',
+    'music.lyrics_label': 'Liedtext (Optional)',
+    'music.lyrics_placeholder': 'Gib deinen Liedtext hier ein...',
+    'music.instrumental': 'Instrumental',
+    'music.auto': 'Auto',
     'common.eg': 'z.B.',
     
     // Voice Isolator
@@ -205,6 +234,8 @@ const translations = {
     'text_to_speech.stability_description': 'Kontrolliert, wie stabil die Sprachgenerierung ist. Höhere Werte erzeugen konsistentere Ergebnisse.',
     'text_to_speech.similarity_boost': 'Ähnlichkeits-Boost',
     'text_to_speech.similarity_boost_description': 'Verstärkt die Ähnlichkeit zur ursprünglichen Stimme. Höhere Werte machen die generierte Stimme ähnlicher zur ausgewählten Stimme.',
+    'text_to_speech.speed': 'Geschwindigkeit',
+    'text_to_speech.speed_description': 'Steuert die Sprechgeschwindigkeit. Höhere Werte machen die Sprache schneller.',
     'text_to_speech.vocal_delivery': 'Stimmausdruck',
     'text_to_speech.audio_effect': 'Audioeffekt',
     'text_to_speech.select_vocal_expression': 'Stimmausdruck auswählen',
@@ -216,7 +247,16 @@ const translations = {
     'text_to_speech.audio_effect_description': 'Wende spezielle Audioeffekte auf die generierte Sprache an',
     'text_to_speech.example_tags_description': 'Das sind nur Beispiel-Tags - experimentiere gerne mit verschiedenen Anweisungen, Kombinationen und Sound-Effekten, um den gewünschten Stimmeffekt zu erzielen.',
     'text_to_speech.text_placeholder': 'Gib deinen Text hier ein oder füge ihn ein...',
+    'text_to_speech.current_generation': 'Aktuelle Generierung',
     'text_to_speech.download_generated': 'Generiertes Audio herunterladen',
+    
+    // Speech to Speech
+    'speech_to_speech.title': 'Sprache-zu-Sprache',
+    'speech_to_speech.audio_input': 'Audio-Eingabe',
+    'speech_to_speech.stability': 'Stabilität',
+    'speech_to_speech.similarity_boost': 'Ähnlichkeits-Boost',
+    'speech_to_speech.current_generation': 'Aktuelle Generierung',
+    'speech_to_speech.convert': 'Konvertieren',
     
     // Vocal Delivery Options
     'text_to_speech.vocal_delivery_laughs': 'Lacht',
@@ -260,19 +300,6 @@ const translations = {
     'text_to_speech.sound_effect_vintage_radio': 'Vintage Radio',
     'text_to_speech.sound_effect_dark_whisper': 'Dunkles Flüstern',
     
-    // Speech to Speech
-    'speech_to_speech.title': 'Sprache-zu-Sprache-Konverter',
-    'speech_to_speech.audio_input': 'Audio-Eingabe',
-    'speech_to_speech.stability': 'Stabilität',
-    'speech_to_speech.similarity_boost': 'Ähnlichkeits-Boost',
-    'speech_to_speech.convert': 'Konvertieren',
-    'speech_to_speech.download_converted': 'Konvertiertes Audio herunterladen',
-    'speech_to_speech.cost': 'Kosten: {0} Credits',
-    
-    // Sound FX
-    'sound_fx.title': 'Soundeffekt-Generator',
-    'sound_fx.prompt_label': 'Beschreibe den gewünschten Soundeffekt (bitte auf Englisch)',
-    'sound_fx.prompt_placeholder': 'Beschreibe den Soundeffekt auf Englisch, den du generieren möchtest (z.B. "Cinematic Braam, Horror" oder "Rain falling on a tin roof")',
     'sound_fx.english_note': 'Hinweis: Für beste Ergebnisse sollten Prompts auf Englisch eingegeben werden.',
     'sound_fx.duration': 'Dauer',
     'sound_fx.auto': 'Auto',
